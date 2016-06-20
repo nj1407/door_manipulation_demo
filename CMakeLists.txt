@@ -5,21 +5,21 @@ project(door_manipulation_demo)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-    pcl_ros
-	pcl_conversions
-	sensor_msgs
-	geometry_msgs
-	std_msgs
-	std_srvs
-	roscpp
-	rospy
- 	message_generation
- 	actionlib_msgs
- 	#moveit_ros_planning_interface
-    #moveit_utils
-    #moveit_msgs
-    tf_conversions
-    #segbot_arm_manipulation
+  roscpp
+  rospy
+  std_msgs
+  sensor_msgs
+  geometry_msgs
+  message_generation
+  #jaco_msgs
+  actionlib
+  pcl_ros
+  pcl_conversions
+  tf_conversions
+  moveit_utils
+  moveit_ros_planning_interface
+  moveit_msgs
+ 
 )
 
 ## System dependencies are found with CMake's conventions
@@ -80,7 +80,7 @@ find_package(PCL 1.2 REQUIRED)
 generate_messages(
    DEPENDENCIES
    std_msgs
-   std_srvs
+   #std_srvs
    sensor_msgs
    geometry_msgs
    actionlib_msgs
@@ -121,6 +121,7 @@ catkin_package(
 #  LIBRARIES mimic_motion
 #  CATKIN_DEPENDS roscpp rospy std_msgs
 #  DEPENDS system_lib
+
 )
 ###########
 ## Build ##
@@ -155,18 +156,22 @@ add_definitions(${PCL_DEFINITIONS})
 
 ## Declare a C++ executable
 add_executable(door_manipulation_demo src/door_handle_detection.cpp)
-add_executable(cluster_segmentation src/cluster_segmentation.cpp)
+add_executable(door_open src/door_open.cpp)
+
+#add_executable(door_manipulation_demo src/add_two_ints_client.cpp)
+#target_link_libraries(add_two_ints_client ${catkin_LIBRARIES})
+#add_dependencies(add_two_ints_client beginner_tutorials_gencpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 #add_dependencies(cluster_segmentation ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(door_manipulation_demo roscpp segbot_arm_manipulation_generate_messages_cpp)
+add_dependencies(door_manipulation_demo door_demo_manipulation_gencpp)
+add_dependencies(door_open door_demo_manipulation_gencpp)
 
 ## Specify libraries to link a library or executable target against
-#target_link_libraries(door_manipulation_demo ${PCL_LIBRARIES})
 target_link_libraries(door_manipulation_demo ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES})
-target_link_libraries (cluster_segmentation ${PCL_LIBRARIES})
-#target_link_libraries(door_manipulation_demo ${catkin_LIBRARIES})
+target_link_libraries(door_open ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES})
+
 
 #############
 ## Install ##

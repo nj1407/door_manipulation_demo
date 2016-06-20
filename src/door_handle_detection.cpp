@@ -22,14 +22,6 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
-//tf stuff
-#include <tf/transform_listener.h>
-#include <tf/tf.h>
-#include <tf/transform_datatypes.h>
-#include <tf_conversions/tf_eigen.h>
-#include <tf/transform_broadcaster.h>
-
-
 // PCL specific includes
 #include <pcl/conversions.h>
 #include <pcl_conversions/pcl_conversions.h>
@@ -63,12 +55,7 @@
 
 //including package services 
 #include "door_manipulation_demo/door_perception.h"
-#include "door_manipulation_demo/door_reorder.h"
 
-#include <tf/transform_listener.h>
-#include <tf/tf.h>
-
-#include <moveit_msgs/DisplayRobotState.h>
 // Kinematics
 #include <moveit_msgs/GetPositionFK.h>
 #include <moveit_msgs/GetPositionIK.h>
@@ -79,7 +66,7 @@
 
 #include <geometry_msgs/TwistStamped.h>
 
-//#include <segbot_arm_manipulation/arm_utils.h>
+
 
 /* define what kind of point clouds we're using */
 typedef pcl::PointXYZRGB PointT;
@@ -98,6 +85,12 @@ std::vector<PointCloudT::Ptr > clusters;
 std::vector<PointCloudT::Ptr > clusters_on_plane;
 
 sensor_msgs::PointCloud2 cloud_ros;
+
+// used to see if door has moved
+sensor_msgs::JointState current_state;
+Eigen::Vector4f plane_coefficients_compare;
+bool firstLook = true;
+
 
 ros::Publisher cloud_pub;
 ros::Publisher door_cloud_pub;
@@ -129,12 +122,15 @@ void sig_handler(int sig)
   exit(1);
 };
 
+// used to get current state to see if door has moved
+void joint_state_cb (const sensor_msgs::JointStateConstPtr& input) {
+	//NUM JOINTS IS 8
+	if (input->position.size() == 8){
+		current_state = *input;
+	}
+}
 
-
-
-
-void
-cloud_cb (const sensor_msgs::PointCloud2ConstPtr& input)
+void cloud_cb (const sensor_msgs::PointCloud2ConstPtr& input)
 {
 
 	
@@ -323,6 +319,7 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 
 	//get the plane coefficients
 	Eigen::Vector4f plane_coefficients;
+	
 	plane_coefficients(0)=coefficients->values[0];
 	plane_coefficients(1)=coefficients->values[1];
 	plane_coefficients(2)=coefficients->values[2];
@@ -330,7 +327,6 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 	
 	ROS_INFO("Planar coefficients: %f, %f, %f, %f",
 		plane_coefficients(0),plane_coefficients(1),plane_coefficients(2),	plane_coefficients(3));
-	
 	
 	//Step 3: Eucledian Cluster Extraction
 	computeClusters(cloud_blobs,cluster_extraction_tolerance);
@@ -383,10 +379,9 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 	
 	pcl::toROSMsg(*cloud_plane,cloud_ros);
 	cloud_ros.header.frame_id = cloud->header.frame_id;
-		door_cloud_pub.publish(cloud_ros);
+	door_cloud_pub.publish(cloud_ros);
 	
 
-	
 	return true;
 }
 
@@ -399,23 +394,18 @@ int main (int argc, char** argv)
 	// Create a ROS subscriber for the input point cloud
 	std::string param_topic = "/xtion_camera/depth_registered/points";
 	ros::Subscriber sub = n.subscribe (param_topic, 1, cloud_cb);
-
+	
+	//create subscriber to joint angles
+	ros::Subscriber sub_angles = n.subscribe ("/joint_states", 1, joint_state_cb);
+	
 	//debugging publisher
 	cloud_pub = n.advertise<sensor_msgs::PointCloud2>("door_handle_detection/cloud", 1);
 	door_cloud_pub = n.advertise<sensor_msgs::PointCloud2>("door_handle_detection/plane_cloud", 1);
 
-	//publisher for cost map cloud
-	//cloud_costmap_pub = n.advertise<sensor_msgs::PointCloud2>("/xtion_obstacle_cloud", 1);
-
 	//service
 	ros::ServiceServer service = n.advertiseService("door_handle_detection/door_perception", seg_cb);
-	
 	ros::ServiceClient client = n.serviceClient<door_manipulation_demo::door_perception>("door_perception");
-	//ros::ServiceClient client2 = n.serviceClient<door_manipulation_demo::door_reorder>("door_reorder");
-	
-	//segbot_arm_manipulation::moveToPoseMoveIt(n,0);
-	//spinSleep(3.0);
-	
+
 	//refresh rate
 	double ros_rate = 3.0;
 	ros::Rate r(ros_rate);
@@ -428,4 +418,7 @@ int main (int argc, char** argv)
 		r.sleep();
 
 	}
+	
+
+	
 };
