@@ -18,11 +18,13 @@
 #include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/PoseArray.h>
 #include <std_msgs/Float32.h>
+#include <geometry_msgs/PoseStamped.h>
 
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
 // PCL specific includes
+#include <pcl_ros/point_cloud.h>	
 #include <pcl/conversions.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
@@ -64,13 +66,14 @@
 #include <moveit_utils/MicoMoveitJointPose.h>
 #include <moveit_utils/MicoMoveitCartesianPose.h>
 
-#include <geometry_msgs/TwistStamped.h>
-
+//tf 
+#include <tf/transform_listener.h>
 
 
 /* define what kind of point clouds we're using */
 typedef pcl::PointXYZRGB PointT;
 typedef pcl::PointCloud<PointT> PointCloudT;
+typedef pcl::PointCloud<pcl::PointXYZ> PCLCloudXYZ;
 
 // Mutex: //
 boost::mutex cloud_mutex;
@@ -79,6 +82,7 @@ bool new_cloud_available_flag = false;
 PointCloudT::Ptr cloud (new PointCloudT);
 PointCloudT::Ptr cloud_aggregated (new PointCloudT);
 PointCloudT::Ptr cloud_plane (new PointCloudT);
+PointCloudT::Ptr cloud_centroid (new PointCloudT);
 PointCloudT::Ptr cloud_blobs (new PointCloudT);
 PointCloudT::Ptr empty_cloud (new PointCloudT);
 std::vector<PointCloudT::Ptr > clusters;
@@ -91,11 +95,13 @@ sensor_msgs::JointState current_state;
 Eigen::Vector4f plane_coefficients_compare;
 bool firstLook = true;
 
+Eigen::Vector4f centroid;
 
 ros::Publisher cloud_pub;
 ros::Publisher door_cloud_pub;
-
-ros::Publisher cloud_costmap_pub;
+ros::Publisher move_point;
+ros::Publisher goal_pub;
+ros::Publisher goal_pub_2;
 PointCloudT::Ptr cloud_costmap (new PointCloudT);
 
 //true if Ctrl-C is pressed
@@ -194,6 +200,7 @@ void computeClusters(PointCloudT::Ptr in, double tolerance){
 	std::vector<pcl::PointIndices> cluster_indices;
 	pcl::EuclideanClusterExtraction<PointT> ec;
 	ec.setClusterTolerance (tolerance); // 2cm
+	//filter by door handle size assumed facing door head on and only have points of this size
 	ec.setMinClusterSize (300);
 	ec.setMaxClusterSize (800);
 	ec.setSearchMethod (tree);
@@ -271,7 +278,7 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 	//get the point cloud by aggregating k successive input clouds
 	waitForCloudK(15);
 	cloud = cloud_aggregated;
-
+    ROS_INFO("got cloud");
 	double filter_z = 1.15;
 	
 	// Apply z filter -- we don't care for anything X m away in the z direction
@@ -280,7 +287,7 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 	pass.setFilterFieldName ("z");
 	pass.setFilterLimits (0.0, filter_z);
 	pass.filter (*cloud);
-	
+	ROS_INFO("before segmentation");
 	// Create the filtering object: downsample the dataset using a leaf size of 1cm
 	pcl::VoxelGrid<PointT> vg;
 	pcl::PointCloud<PointT>::Ptr cloud_filtered (new pcl::PointCloud<PointT>);
@@ -317,6 +324,9 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 	extract.setNegative (true);
 	extract.filter (*cloud_blobs);
 
+
+	ROS_INFO("passed first filter");
+	
 	//get the plane coefficients
 	Eigen::Vector4f plane_coefficients;
 	
@@ -331,7 +341,7 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 	//Step 3: Eucledian Cluster Extraction
 	computeClusters(cloud_blobs,cluster_extraction_tolerance);
 	
-	ROS_INFO("Found %i clusters.",(int)clusters.size());
+	ROS_INFO("Found %i clusters eucldian.",(int)clusters.size());
 
 	
 	clusters_on_plane.clear();
@@ -343,7 +353,7 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 		}
 	}
 	
-	ROS_INFO("Found %i clusters on the plane.",(int)clusters_on_plane.size());
+	ROS_INFO("Found %i clusters on the plane after restrains.",(int)clusters_on_plane.size());
 	
 	//fill in response
 	
@@ -355,38 +365,74 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 	}
 	
 	//blobs on the plane
-	for (unsigned int i = 0; i < clusters_on_plane.size(); i++){
-		pcl::toROSMsg(*clusters_on_plane.at(i),cloud_ros);
+	//for (unsigned int i = 0; i < clusters_on_plane.size(); i++){
+	if(clusters_on_plane.size() < 1){
+		ROS_INFO("Found 0 clusters did not continue");	
+	} else {
+		
+		pcl::toROSMsg(*clusters_on_plane.at(0),cloud_ros);
 		cloud_ros.header.frame_id = cloud->header.frame_id;
-		res.cloud_clusters.push_back(cloud_ros);
-	}
-	
-	//TO DO: this may not always be the case
-	res.is_plane_found = true;
-	
-	//for debugging purposes
-	//now, put the clouds in cluster_on_plane in one cloud and publish it
-	cloud_blobs->clear();
+		res.cloud_cluster = cloud_ros;
+		//TO DO: this may not always be the case
+		res.is_plane_found = true;
+		ROS_INFO("passed second filer");
+		
+		//for debugging purposes
+		//now, put the clouds in cluster_on_plane in one cloud and publish it
+		cloud_blobs->clear();
 
-	for (unsigned int i = 0; i < clusters_on_plane.size(); i++){
-		*cloud_blobs += *clusters_on_plane.at(i);
-	}
-	
-	ROS_INFO("Publishing debug cloud...");
-	pcl::toROSMsg(*cloud_blobs,cloud_ros);
-	cloud_ros.header.frame_id = cloud->header.frame_id;
-	cloud_pub.publish(cloud_ros);
-	
-	pcl::toROSMsg(*cloud_plane,cloud_ros);
-	cloud_ros.header.frame_id = cloud->header.frame_id;
-	door_cloud_pub.publish(cloud_ros);
-	
-
+		for (unsigned int i = 0; i < clusters_on_plane.size(); i++){
+			*cloud_blobs += *clusters_on_plane.at(i);
+		}
+		
+		ROS_INFO("Publishing debug cloud...");
+		pcl::toROSMsg(*cloud_blobs,cloud_ros);
+		cloud_ros.header.frame_id = cloud->header.frame_id;
+		cloud_pub.publish(cloud_ros);
+		//pcl::toROSMsg(*cloud_plane,cloud_ros);
+		//cloud_ros.header.frame_id = cloud->header.frame_id;
+		door_cloud_pub.publish(cloud_ros);
+		//get centroid and move it up .1 m 
+		//used to get goal xyz
+		pcl::compute3DCentroid(*cloud_blobs,centroid);
+		centroid.x() += .1;
+		door_cloud_pub.publish(cloud_ros);
+		
+		pcl::PointXYZ move_to;
+		//publishes an xyz point to see where goal in rviz is 
+		pcl::PointCloud<pcl::PointXYZ> move_to_point;
+		move_to.x = centroid.x();
+		move_to.y = centroid.y();
+		move_to.z = centroid.z();
+		move_to_point.push_back(move_to);
+		move_to_point.header.frame_id = cloud->header.frame_id;
+		move_point.publish(move_to_point.makeShared());
+		//get pose
+		geometry_msgs::PoseStamped goal;
+		goal.pose.position.x = centroid.x();
+		goal.pose.position.y = centroid.y();
+		goal.pose.position.z = centroid.z();
+		goal.pose.orientation.x = 0.0;
+		goal.pose.orientation.y = 0.0;
+		goal.pose.orientation.z = 0.0;
+		goal.pose.orientation.w = 0.0;
+		//To::DO figure out values of 180
+	   // goal.header.seq = cloud->header.seq;
+		//goal.header.stamp = cloud->header.stamp;
+		//goal.header.frame_id = cloud->header.frame_id;
+		goal.header.frame_id = cloud->header.frame_id;
+		//goal.header.seq = cloud_ros.header.seq;
+		//goal.header.stamp = cloud_ros.header.stamp;
+		goal_pub.publish(goal);
+		goal.pose.position.z += .1;
+		goal_pub_2.publish(goal);
+	}	
 	return true;
 }
 
 int main (int argc, char** argv)
 {
+	//tf mico_link_base
 	// Initialize ROS
 	ros::init (argc, argv, "segbot_arm_door_handle_detector");
 	ros::NodeHandle n;
@@ -402,17 +448,35 @@ int main (int argc, char** argv)
 	cloud_pub = n.advertise<sensor_msgs::PointCloud2>("door_handle_detection/cloud", 1);
 	door_cloud_pub = n.advertise<sensor_msgs::PointCloud2>("door_handle_detection/plane_cloud", 1);
 
+	//publisher for planar coefficents
+	//tf::transformEigenToTF(planar_coefficent_pub);
+	//planar_coefficent_pub = n.advertise<std_msgs::Vector4f>("planar_coefficents", 1);
+	
 	//service
 	ros::ServiceServer service = n.advertiseService("door_handle_detection/door_perception", seg_cb);
 	ros::ServiceClient client = n.serviceClient<door_manipulation_demo::door_perception>("door_perception");
 
+	goal_pub_2 = n.advertise<geometry_msgs::PoseStamped>("goal_to_go_2", 1);
+	goal_pub = n.advertise<geometry_msgs::PoseStamped>("goal_to_go", 1);
+	move_point = n.advertise<PCLCloudXYZ> ("point_to_send/cloud", 1);
+	
+	
 	//refresh rate
 	double ros_rate = 3.0;
 	ros::Rate r(ros_rate);
 
+	tf::TransformListener listener;
 	// Main loop:
 	while (!g_caught_sigint && ros::ok())
 	{
+		tf::StampedTransform transform;
+		try{
+			listener.lookupTransform("/mico_link_base", "/xtion_camera/depth_registered/points", ros::Time(0), transform);
+			}
+		catch (tf::TransformException ex){
+			ROS_ERROR("%s",ex.what());
+			ros::Duration(1.0).sleep();
+			}
 		//collect messages
 		ros::spinOnce();
 		r.sleep();
