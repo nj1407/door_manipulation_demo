@@ -338,6 +338,8 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 	ROS_INFO("Planar coefficients: %f, %f, %f, %f",
 		plane_coefficients(0),plane_coefficients(1),plane_coefficients(2),	plane_coefficients(3));
 	
+	bool plane_is_vertical = plane_coefficients(3) < 0;
+
 	//Step 3: Eucledian Cluster Extraction
 	computeClusters(cloud_blobs,cluster_extraction_tolerance);
 	
@@ -364,12 +366,11 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 		res.cloud_plane_coef[i] = plane_coefficients(i);
 	}
 	
-	//blobs on the plane
-	//for (unsigned int i = 0; i < clusters_on_plane.size(); i++){
-	if(clusters_on_plane.size() < 1){
-		ROS_INFO("Found 0 clusters did not continue");	
+	//vhech if valid information
+	if(clusters_on_plane.size() < 1 ){
+		ROS_INFO("Found 0 clusters or plane isn't vertical did not continue");	
 	} else {
-		
+		ROS_INFO("Picked largest cluster");
 		pcl::toROSMsg(*clusters_on_plane.at(0),cloud_ros);
 		cloud_ros.header.frame_id = cloud->header.frame_id;
 		res.cloud_cluster = cloud_ros;
@@ -384,6 +385,8 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 		for (unsigned int i = 0; i < clusters_on_plane.size(); i++){
 			*cloud_blobs += *clusters_on_plane.at(i);
 		}
+		
+		//To::DO figure out values of 180
 		
 		ROS_INFO("Publishing debug cloud...");
 		pcl::toROSMsg(*cloud_blobs,cloud_ros);
@@ -407,6 +410,7 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 		move_to_point.push_back(move_to);
 		move_to_point.header.frame_id = cloud->header.frame_id;
 		move_point.publish(move_to_point.makeShared());
+		
 		//get pose
 		geometry_msgs::PoseStamped goal;
 		goal.pose.position.x = centroid.x();
@@ -416,13 +420,9 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 		goal.pose.orientation.y = 0.0;
 		goal.pose.orientation.z = 0.0;
 		goal.pose.orientation.w = 0.0;
-		//To::DO figure out values of 180
-	   // goal.header.seq = cloud->header.seq;
-		//goal.header.stamp = cloud->header.stamp;
-		//goal.header.frame_id = cloud->header.frame_id;
 		goal.header.frame_id = cloud->header.frame_id;
-		//goal.header.seq = cloud_ros.header.seq;
-		//goal.header.stamp = cloud_ros.header.stamp;
+		
+		//publish the two goals to get it to push the goor
 		goal_pub.publish(goal);
 		goal.pose.position.z += .1;
 		goal_pub_2.publish(goal);

@@ -155,7 +155,7 @@ add_definitions(${PCL_DEFINITIONS})
 # add_dependencies(door_manipulation_demo ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-add_executable(door_manipulation_demo src/door_handle_detection.cpp)
+add_executable(door_handle_detection src/door_handle_detection.cpp)
 add_executable(door_open src/door_open.cpp)
 
 #add_executable(door_manipulation_demo src/add_two_ints_client.cpp)
@@ -165,11 +165,11 @@ add_executable(door_open src/door_open.cpp)
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 #add_dependencies(cluster_segmentation ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(door_manipulation_demo door_demo_manipulation_gencpp)
+add_dependencies(door_handle_detection door_demo_manipulation_gencpp)
 add_dependencies(door_open door_demo_manipulation_gencpp)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(door_manipulation_demo ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES})
+target_link_libraries(door_handle_detection ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES})
 target_link_libraries(door_open ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES})
 
 
