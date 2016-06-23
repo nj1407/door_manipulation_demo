@@ -338,7 +338,7 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 	ROS_INFO("Planar coefficients: %f, %f, %f, %f",
 		plane_coefficients(0),plane_coefficients(1),plane_coefficients(2),	plane_coefficients(3));
 	
-	bool plane_is_vertical = plane_coefficients(3) < 0;
+	bool plane_is_not_vertical = plane_coefficients(1) > -.5 && plane_coefficients(3) > 0;
 
 	//Step 3: Eucledian Cluster Extraction
 	computeClusters(cloud_blobs,cluster_extraction_tolerance);
@@ -367,7 +367,7 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 	}
 	
 	//vhech if valid information
-	if(clusters_on_plane.size() < 1 ){
+	if(clusters_on_plane.size() < 1 || plane_is_not_vertical){
 		ROS_INFO("Found 0 clusters or plane isn't vertical did not continue");	
 	} else {
 		ROS_INFO("Picked largest cluster");
@@ -398,7 +398,7 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 		//get centroid and move it up .1 m 
 		//used to get goal xyz
 		pcl::compute3DCentroid(*cloud_blobs,centroid);
-		centroid.x() += .1;
+		centroid.x() += .15;
 		door_cloud_pub.publish(cloud_ros);
 		
 		pcl::PointXYZ move_to;
