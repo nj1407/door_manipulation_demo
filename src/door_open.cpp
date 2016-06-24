@@ -83,12 +83,14 @@ geometry_msgs::PoseStamped second_goal;
 
 void goal_cb (const geometry_msgs::PoseStampedConstPtr& input)
 {
+		ROS_INFO("entered goal_cb");
 		first_goal.header = input->header;
 		first_goal.pose = input->pose; 
 }
 
 void goal_cb_2 (const geometry_msgs::PoseStampedConstPtr& input)
 {
+		ROS_INFO("entered goal_cb2");
 		second_goal.header = input->header;
 		second_goal.pose = input->pose; 
 }
@@ -102,33 +104,16 @@ int main (int argc, char** argv)
 	//create subscriber to joint angles
 	//ros::Subscriber sub_angles = n.subscribe ("/joint_states", 1, joint_state_cb);
 	
-	ros::Subscriber goal_sub = n.subscribe ("/goal_to_go", 1,goal_cb);
+	ros::Subscriber goal_sub = n.subscribe ("goal_to_go", 1,goal_cb);
 
-	ros::Subscriber goal_sub_2 = n.subscribe ("/goal_to_go_2", 1,goal_cb_2);
+	ros::Subscriber goal_sub_2 = n.subscribe ("goal_to_go_2", 1,goal_cb_2);
 	//service
 	
 	ros::ServiceClient client = n.serviceClient<door_manipulation_demo::door_perception>("/door_handle_detection/door_perception");
 	
 	ros::ServiceClient client_move = n.serviceClient<moveit_utils::MicoMoveitCartesianPose>("mico_cartesianpose_service");
 	
-/*
-	geometry_msgs::Pose goal_pose;
-	//get pose
-    goal_pose.position.x = centroid.x();
-    goal_pose.position.y = centroid.y();
-    goal_pose.position.z = centroid.z();
-    goal_pose.orientation.x = 0.0;
-    goal_pose.orientation.y = 0.0;
-    goal_pose.orientation.z = 0.0;
-    goal_pose.orientation.w = 0.0;
-    goal.pose = goal_pose;
-    //get header
-    std_msgs::Header goal_header;
-    goal_header.seq = 0;
-    goal_header.stamp = save_Time;
-    goal_header.frame_id = frame_ids;
-    goal.header = goal_header;
-  */  
+
 	door_manipulation_demo::door_perception door_srv;
 	moveit_utils::MicoMoveitCartesianPose mico_srv;
 	mico_srv.request.target = first_goal;
@@ -136,10 +121,10 @@ int main (int argc, char** argv)
 	//make calls to get vision
 	if(client.call(door_srv)){
 		ros::spinOnce();
-		if(client.call(door_srv)){
+		//if(client.call(door_srv)){
 			ROS_INFO("entered");
-			ros::spinOnce();
-		}	
+			//ros::spinOnce();
+		//}	
 	} else {
 		ROS_INFO("didn't enter");
 	}		
@@ -149,6 +134,7 @@ int main (int argc, char** argv)
 	} else {
 		ROS_INFO("didn't entered srv move 1 ");
 	}
+	
 	mico_srv.request.target = second_goal;
 	//goal_pose.position.y += .1;
 	ros::spinOnce();

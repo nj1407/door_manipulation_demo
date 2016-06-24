@@ -398,10 +398,10 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 		//get centroid and move it up .1 m 
 		//used to get goal xyz
 		pcl::compute3DCentroid(*cloud_blobs,centroid);
-		centroid.x() += .15;
+		centroid.y() += .08;
 		door_cloud_pub.publish(cloud_ros);
 		
-		pcl::PointXYZ move_to;
+		/*pcl::PointXYZ move_to;
 		//publishes an xyz point to see where goal in rviz is 
 		pcl::PointCloud<pcl::PointXYZ> move_to_point;
 		move_to.x = centroid.x();
@@ -410,6 +410,7 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 		move_to_point.push_back(move_to);
 		move_to_point.header.frame_id = cloud->header.frame_id;
 		move_point.publish(move_to_point.makeShared());
+		*/
 		
 		//get pose
 		geometry_msgs::PoseStamped goal;
@@ -456,22 +457,25 @@ int main (int argc, char** argv)
 	ros::ServiceServer service = n.advertiseService("door_handle_detection/door_perception", seg_cb);
 	ros::ServiceClient client = n.serviceClient<door_manipulation_demo::door_perception>("door_perception");
 
+	
+	//move_point = n.advertise<PCLCloudXYZ> ("point_to_send/cloud", 1);
 	goal_pub_2 = n.advertise<geometry_msgs::PoseStamped>("goal_to_go_2", 1);
 	goal_pub = n.advertise<geometry_msgs::PoseStamped>("goal_to_go", 1);
-	move_point = n.advertise<PCLCloudXYZ> ("point_to_send/cloud", 1);
-	
 	
 	//refresh rate
 	double ros_rate = 3.0;
 	ros::Rate r(ros_rate);
 
 	tf::TransformListener listener;
+	//listener = tf.TransformListener();
 	// Main loop:
 	while (!g_caught_sigint && ros::ok())
 	{
 		tf::StampedTransform transform;
 		try{
-			listener.lookupTransform("/mico_link_base", "/xtion_camera/depth_registered/points", ros::Time(0), transform);
+			listener.waitForTransform( "/mico_link_base" , "/xtion_camera_rgb_optical_frame",  ros::Time(0), ros::Duration(1.0) );
+			listener.lookupTransform( "/mico_link_base" ,  "/xtion_camera_rgb_optical_frame", ros::Time(0), transform);
+			
 			}
 		catch (tf::TransformException ex){
 			ROS_ERROR("%s",ex.what());
