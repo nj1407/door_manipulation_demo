@@ -68,7 +68,7 @@
 
 //tf 
 #include <tf/transform_listener.h>
-
+#define PI 3.14159265
 
 /* define what kind of point clouds we're using */
 typedef pcl::PointXYZRGB PointT;
@@ -401,7 +401,7 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 		//get centroid and move it up .1 m 
 		//used to get goal xyz
 		pcl::compute3DCentroid(*cloud_blobs,centroid);
-		centroid.y() += .08;
+		centroid.y() += .1;
 		door_cloud_pub.publish(cloud_ros);
 		
 		/*pcl::PointXYZ move_to;
@@ -447,7 +447,7 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 		
 		//mext transform pose into arm frame of reference and set orientation
 		try{
-			listener.waitForTransform(cloud_ros.header.frame_id,  "mico_api_origin",  ros::Time(0), ros::Duration(5.0) );
+			listener.waitForTransform(cloud_ros.header.frame_id,  "mico_link_origin",  ros::Time(0), ros::Duration(5.0) );
 			listener.transformPose("mico_api_origin", goal, goal);
 			
 		}
@@ -457,7 +457,7 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 		}
 		
 		//set orientation after transforming into arm frame of reference
-		goal.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(0,0,0);
+		goal.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(1.54,0,1.54);
 		
 		
 		//publish the two goals to get it to push the goor
