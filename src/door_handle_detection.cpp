@@ -274,24 +274,15 @@ void waitForCloudK(int k){
 
 bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipulation_demo::door_perception::Response &res)
 {
+	//listener for transforrms
+	tf::TransformListener listener;
+	
 	ROS_INFO("entered seg_cb");
 	//get the point cloud by aggregating k successive input clouds
 	waitForCloudK(15);
 	cloud = cloud_aggregated;
     ROS_INFO("got cloud");
 	double filter_z = 1.15;
-	
-	//do the tf transformation for the published cloud
-		tf::TransformListener listener;
-		tf::StampedTransform transform;
-		try{
-			listener.waitForTransform( "mico_link_base", cloud->header.frame_id,  ros::Time(0), ros::Duration(5.0) );
-			listener.lookupTransform( "mico_link_base", cloud->header.frame_id, ros::Time(0), transform);
-			}
-		catch (tf::TransformException ex){
-			ROS_ERROR("%s",ex.what());
-			ros::Duration(1.0).sleep();
-			}
 	
 	// Apply z filter -- we don't care for anything X m away in the z direction
 	pcl::PassThrough<PointT> pass;
@@ -410,7 +401,7 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 		//get centroid and move it up .1 m 
 		//used to get goal xyz
 		pcl::compute3DCentroid(*cloud_blobs,centroid);
-		centroid.y() -= .08;
+		centroid.y() += .08;
 		door_cloud_pub.publish(cloud_ros);
 		
 		/*pcl::PointXYZ move_to;
@@ -425,22 +416,57 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 		*/
 		
 		
+		//do the tf transformation for the published cloud
+		
+		
+		
+		
+		/*geometry_msgs::PoseStamped goal;
+		goal.pose.position.x = transform.getOrigin().getX();
+		goal.pose.position.y = transform.getOrigin().getY();
+		goal.pose.position.z = transform.getOrigin().getZ();
+		//get it flat (180 degress)
+		goal.pose.orientation.x = .554211797868;
+		goal.pose.orientation.y = .413999727756;
+		goal.pose.orientation.z = .413999727756;
+		goal.pose.orientation.w = .595696187745;*/
+		
 		//get pose
 		geometry_msgs::PoseStamped goal;
 		goal.pose.position.x = centroid.x();
 		goal.pose.position.y = centroid.y();
 		goal.pose.position.z = centroid.z();
 		//get it flat (180 degress)
-		goal.pose.orientation.x = .554211797868;
+		/*goal.pose.orientation.x = .554211797868;
 		goal.pose.orientation.y = .413999727756;
 		goal.pose.orientation.z = .413999727756;
-		goal.pose.orientation.w = .595696187745;
+		goal.pose.orientation.w = .595696187745;*/
+		goal.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(0,0,0);
 		goal.header.frame_id = cloud_ros.header.frame_id;
+		
+		
+		//mext transform pose into arm frame of reference and set orientation
+		try{
+			listener.waitForTransform(cloud_ros.header.frame_id,  "mico_api_origin",  ros::Time(0), ros::Duration(5.0) );
+			listener.transformPose("mico_api_origin", goal, goal);
+			
+		}
+		catch (tf::TransformException ex){
+			ROS_ERROR("%s",ex.what());
+			ros::Duration(1.0).sleep();
+		}
+		
+		//set orientation after transforming into arm frame of reference
+		goal.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(0,0,0);
+		
 		
 		//publish the two goals to get it to push the goor
 		goal_pub.publish(goal);
-		goal.pose.position.z += .1;
-		goal_pub_2.publish(goal);
+		
+		
+		
+		//goal.pose.position.z += .1;
+		//goal_pub_2.publish(goal);
 	}	
 	return true;
 }
