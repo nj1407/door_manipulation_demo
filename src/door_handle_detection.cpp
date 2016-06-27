@@ -281,6 +281,18 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
     ROS_INFO("got cloud");
 	double filter_z = 1.15;
 	
+	//do the tf transformation for the published cloud
+		tf::TransformListener listener;
+		tf::StampedTransform transform;
+		try{
+			listener.waitForTransform( "mico_link_base", cloud->header.frame_id,  ros::Time(0), ros::Duration(5.0) );
+			listener.lookupTransform( "mico_link_base", cloud->header.frame_id, ros::Time(0), transform);
+			}
+		catch (tf::TransformException ex){
+			ROS_ERROR("%s",ex.what());
+			ros::Duration(1.0).sleep();
+			}
+	
 	// Apply z filter -- we don't care for anything X m away in the z direction
 	pcl::PassThrough<PointT> pass;
 	pass.setInputCloud (cloud);
@@ -398,7 +410,7 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 		//get centroid and move it up .1 m 
 		//used to get goal xyz
 		pcl::compute3DCentroid(*cloud_blobs,centroid);
-		centroid.y() += .08;
+		centroid.y() -= .08;
 		door_cloud_pub.publish(cloud_ros);
 		
 		/*pcl::PointXYZ move_to;
@@ -412,16 +424,18 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 		move_point.publish(move_to_point.makeShared());
 		*/
 		
+		
 		//get pose
 		geometry_msgs::PoseStamped goal;
 		goal.pose.position.x = centroid.x();
 		goal.pose.position.y = centroid.y();
 		goal.pose.position.z = centroid.z();
-		goal.pose.orientation.x = 0.0;
-		goal.pose.orientation.y = 0.0;
-		goal.pose.orientation.z = 0.0;
-		goal.pose.orientation.w = 0.0;
-		goal.header.frame_id = cloud->header.frame_id;
+		//get it flat (180 degress)
+		goal.pose.orientation.x = .554211797868;
+		goal.pose.orientation.y = .413999727756;
+		goal.pose.orientation.z = .413999727756;
+		goal.pose.orientation.w = .595696187745;
+		goal.header.frame_id = cloud_ros.header.frame_id;
 		
 		//publish the two goals to get it to push the goor
 		goal_pub.publish(goal);
@@ -445,6 +459,7 @@ int main (int argc, char** argv)
 	//create subscriber to joint angles
 	ros::Subscriber sub_angles = n.subscribe ("/joint_states", 1, joint_state_cb);
 	
+	
 	//debugging publisher
 	cloud_pub = n.advertise<sensor_msgs::PointCloud2>("door_handle_detection/cloud", 1);
 	door_cloud_pub = n.advertise<sensor_msgs::PointCloud2>("door_handle_detection/plane_cloud", 1);
@@ -466,21 +481,12 @@ int main (int argc, char** argv)
 	double ros_rate = 3.0;
 	ros::Rate r(ros_rate);
 
-	tf::TransformListener listener;
+	
 	//listener = tf.TransformListener();
 	// Main loop:
 	while (!g_caught_sigint && ros::ok())
 	{
-		tf::StampedTransform transform;
-		try{
-			listener.waitForTransform( "/mico_link_base" , "/xtion_camera_rgb_optical_frame",  ros::Time(0), ros::Duration(1.0) );
-			listener.lookupTransform( "/mico_link_base" ,  "/xtion_camera_rgb_optical_frame", ros::Time(0), transform);
 			
-			}
-		catch (tf::TransformException ex){
-			ROS_ERROR("%s",ex.what());
-			ros::Duration(1.0).sleep();
-			}
 		//collect messages
 		ros::spinOnce();
 		r.sleep();
