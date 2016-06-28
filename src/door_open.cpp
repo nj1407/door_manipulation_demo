@@ -114,6 +114,7 @@ void pressEnter(){
 		std::cout << "Please press ENTER\n";
 }
 
+//listen for where the arm is 
 void listenForArmData(float rate){
 	heardPose = false;
 	heardJoinstState = false;
@@ -129,6 +130,7 @@ void listenForArmData(float rate){
 	}
 }
 
+//get the first approach goal
 void goal_cb (const geometry_msgs::PoseStampedConstPtr& input)
 {
 		ROS_INFO("entered goal_cb");
@@ -137,6 +139,7 @@ void goal_cb (const geometry_msgs::PoseStampedConstPtr& input)
 		
 }
 
+//get the second goal *may not be nesscecary
 void goal_cb_2 (const geometry_msgs::PoseStampedConstPtr& input)
 {
 		ROS_INFO("entered goal_cb2");
@@ -193,6 +196,7 @@ int main (int argc, char** argv)
 	} else {
 		ROS_INFO("didn't enter");
 	}		
+	//made vision calls check in rviz to see if correct then procede
 	pressEnter();
     ROS_INFO("Demo starting...Move the arm to a 'ready' position .");
 	segbot_arm_manipulation::homeArm(n);
