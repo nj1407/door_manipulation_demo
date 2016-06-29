@@ -201,7 +201,7 @@ int main (int argc, char** argv)
 	} else {
 		ROS_INFO("didn't enter");
 	}		
-	if(heardGoal){
+	//if(heardGoal){
 		
 		//made vision calls check in rviz to see if correct then procede
 		pressEnter();
@@ -234,9 +234,9 @@ int main (int argc, char** argv)
 		double ros_rate = 3.0;
 		ros::Rate r(ros_rate);
 		
-	} else {
+//	} else {
 	
 		ROS_INFO("Demo ending...didn't find an approac point .");
-	}	
+	//}	
 	
 };

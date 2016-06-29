@@ -457,7 +457,7 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 		}
 		
 		//set orientation after transforming into arm frame of reference
-		goal.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(1.54,0,.785);
+		goal.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(1.54,0,1.54);
 		
 		
 		//publish the two goals to get it to push the goor
