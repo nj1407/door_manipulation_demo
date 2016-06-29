@@ -262,7 +262,7 @@ int main (int argc, char** argv)
 		//ROS_INFO("goal picked...check if pose is what you want in rviz if not ctr c.");
 		segbot_arm_manipulation::moveToPoseMoveIt(n,first_goal);
 		
-		ros::spinOnce();
+		ros::spinOnce();                                            
 		
 		/*if(client_move.call(mico_srv)){
 			ROS_INFO(" entered srv move 1 ");
