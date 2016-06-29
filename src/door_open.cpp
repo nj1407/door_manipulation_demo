@@ -230,7 +230,7 @@ int main (int argc, char** argv)
 		
 		//may not need used for robustness
 
-		for(int changex = 0; changex < 1.5; changex += .05){
+		/*for(int changex = 0; changex < 1.5; changex += .05){
 			for(int changey = 0; changey < 1.5; changey += .05){
 				first_goal.pose.position.x += changex;
 				first_goal.pose.position.y += changey;
@@ -239,15 +239,18 @@ int main (int argc, char** argv)
 					goal_pub.publish(first_goal);
 					
 					break;
+					
+				}
+				if(ik_response_approach.error_code.val == 1){
 					break;
 				}
 			}
-		}
+		}*/
 		
 		pressEnter();
 		ROS_INFO("goal picked...check if pose is what you want in rviz if not ctr c.");
 		//segbot_arm_manipulation::moveToPoseMoveIt(n,first_goal);
-		
+		goal_pub.publish(first_goal);
 		
 		//made vision calls check in rviz to see if correct then procede
 		pressEnter();
