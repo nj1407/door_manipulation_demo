@@ -23,13 +23,6 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
-//tf stuff
-#include <tf/transform_listener.h>
-#include <tf/tf.h>
-#include <tf/transform_datatypes.h>
-#include <tf_conversions/tf_eigen.h>
-#include <tf/transform_broadcaster.h>
-
 
 // PCL specific includes
 #include <pcl/conversions.h>
@@ -90,6 +83,7 @@ bool heardGoal = false;
 bool g_caught_sigint = false;
 
 /* what happens when ctr-c is pressed */
+
 void sig_handler(int sig)
 {
   g_caught_sigint = true;
@@ -188,8 +182,8 @@ int main (int argc, char** argv)
 	
 	//get arm position
 	segbot_arm_manipulation::closeHand();
-	listenForArmData(30.0);
-	joint_state_outofview = current_state;
+	//listenForArmData(30.0);
+	//joint_state_outofview = current_state;
 	
 	//set goal for mico service
 	door_manipulation_demo::door_perception door_srv;
