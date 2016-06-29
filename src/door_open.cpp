@@ -78,17 +78,27 @@
 
 Eigen::Vector4f centroid;
 
-typedef pcl::PointXYZRGB PointT;
-typedef pcl::PointCloud<PointT> PointCloudT;
-
-PointCloudT::Ptr cloud (new PointCloudT);
 geometry_msgs::PoseStamped first_goal;
 geometry_msgs::PoseStamped second_goal;
 sensor_msgs::JointState joint_state_outofview;
 sensor_msgs::JointState current_state;
 geometry_msgs::PoseStamped current_pose;
+
 bool heardPose = false;
 bool heardJoinstState = false;
+bool heardGoal = false;
+bool g_caught_sigint = false;
+
+/* what happens when ctr-c is pressed */
+void sig_handler(int sig)
+{
+  g_caught_sigint = true;
+  ROS_INFO("caught sigint, init shutdown sequence...");
+  ros::shutdown();
+  exit(1);
+};
+
+//get the recorded topics
 
 void joint_state_cb (const sensor_msgs::JointStateConstPtr& input) {
 	
@@ -136,6 +146,7 @@ void goal_cb (const geometry_msgs::PoseStampedConstPtr& input)
 		ROS_INFO("entered goal_cb");
 		first_goal.header = input->header;
 		first_goal.pose = input->pose; 
+		heardGoal = true;
 		
 }
 
@@ -149,6 +160,7 @@ void goal_cb_2 (const geometry_msgs::PoseStampedConstPtr& input)
 
 int main (int argc, char** argv)
 {
+	
 	// Initialize ROS
 	ros::init (argc, argv, "segbot_arm_door_open_detector");
 	ros::NodeHandle n;
@@ -156,21 +168,23 @@ int main (int argc, char** argv)
 
 	
 	//create subscriber to joint angles
-	ros::Subscriber sub_angles = n.subscribe ("/joint_states", 1, joint_state_cb);
+	//ros::Subscriber sub_angles = n.subscribe ("/joint_states", 1, joint_state_cb);
 	
 	//subsrcibe to goals
-	ros::Subscriber goal_sub = n.subscribe ("goal_to_go", 1,goal_cb);
+	ros::Subscriber goal_sub = n.subscribe ("/goal_to_go", 1,goal_cb);
 
 	ros::Subscriber goal_sub_2 = n.subscribe ("goal_to_go_2", 1,goal_cb_2);
 	
 	//create subscriber to tool position topic
-	ros::Subscriber sub_tool = n.subscribe("/mico_arm_driver/out/tool_position", 1, toolpos_cb);
+	//ros::Subscriber sub_tool = n.subscribe("/mico_arm_driver/out/tool_position", 1, toolpos_cb);
 	
 	//service
 	
 	ros::ServiceClient client = n.serviceClient<door_manipulation_demo::door_perception>("/door_handle_detection/door_perception");
 	
 	ros::ServiceClient client_move = n.serviceClient<moveit_utils::MicoMoveitCartesianPose>("mico_cartesianpose_service");
+	
+	signal(SIGINT, sig_handler);
 	
 	//get arm position
 	segbot_arm_manipulation::closeHand();
@@ -183,9 +197,6 @@ int main (int argc, char** argv)
 	mico_srv.request.target = first_goal;
 	
 
-	
-
-	
 	//make calls to get vision
 	if(client.call(door_srv)){
 		ros::spinOnce();
@@ -196,37 +207,42 @@ int main (int argc, char** argv)
 	} else {
 		ROS_INFO("didn't enter");
 	}		
-	//made vision calls check in rviz to see if correct then procede
-	pressEnter();
-    ROS_INFO("Demo starting...Move the arm to a 'ready' position .");
-	segbot_arm_manipulation::homeArm(n);
-	
-	ros::spinOnce();
-	if(client_move.call(mico_srv)){
-		ROS_INFO(" entered srv move 1 ");
+	if(heardGoal){
+		
+		//made vision calls check in rviz to see if correct then procede
+		pressEnter();
+		ROS_INFO("Demo starting...Move the arm to a 'ready' position .");
+		segbot_arm_manipulation::homeArm(n);
+		
+		ros::spinOnce();
+		if(client_move.call(mico_srv)){
+			ROS_INFO(" entered srv move 1 ");
+		} else {
+			ROS_INFO("didn't entered srv move 1 ");
+		}
+		
+		/*mico_srv.request.target = second_goal;
+		//goal_pose.position.y += .1;
+		ros::spinOnce();
+		if(client_move.call(mico_srv)){
+			ROS_INFO(" entered srv move 2 ");
+		} else {
+			ROS_INFO("didn't entered srv move 2 ");
+		}
+		*/
+		
+		//ros::spinOnce();
+		pressEnter();
+		ROS_INFO("Demo ending...arm will move back 'ready' position .");
+		//segbot_arm_manipulation::moveToJointState(n,joint_state_outofview);
+		
+		//refresh rate
+		double ros_rate = 3.0;
+		ros::Rate r(ros_rate);
+		
 	} else {
-		ROS_INFO("didn't entered srv move 1 ");
-	}
 	
-	/*mico_srv.request.target = second_goal;
-	//goal_pose.position.y += .1;
-	ros::spinOnce();
-	if(client_move.call(mico_srv)){
-		ROS_INFO(" entered srv move 2 ");
-	} else {
-		ROS_INFO("didn't entered srv move 2 ");
-	}
-	*/
-	
-	//ros::spinOnce();
-	pressEnter();
-    ROS_INFO("Demo ending...arm will move back 'ready' position .");
-	segbot_arm_manipulation::moveToJointState(n,joint_state_outofview);
-	
-	//refresh rate
-	double ros_rate = 3.0;
-	ros::Rate r(ros_rate);
-	
-
+		ROS_INFO("Demo ending...didn't find an approac point .");
+	}	
 	
 };
