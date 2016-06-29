@@ -46,7 +46,7 @@
 
 //including package services 
 #include "door_manipulation_demo/door_perception.h"
-#include <moveit_utils/MicoMoveitCartesianPose.h>
+
 
 #include <tf/transform_listener.h>
 #include <tf/tf.h>
@@ -58,7 +58,7 @@
 
 #include <moveit_utils/AngularVelCtrl.h>
 #include <moveit_utils/MicoMoveitJointPose.h>
-
+#include <moveit_utils/MicoMoveitCartesianPose.h>
 
 #include <geometry_msgs/TwistStamped.h>
 #include <std_msgs/Header.h>
@@ -82,6 +82,8 @@ bool heardJoinstState = false;
 bool heardGoal = false;
 bool g_caught_sigint = false;
 
+ros::Publisher goal_pub;
+
 /* what happens when ctr-c is pressed */
 
 void sig_handler(int sig)
@@ -91,6 +93,27 @@ void sig_handler(int sig)
   ros::shutdown();
   exit(1);
 };
+
+
+moveit_msgs::GetPositionIK::Response computeIK(ros::NodeHandle n, geometry_msgs::PoseStamped p){
+	ros::ServiceClient ikine_client = n.serviceClient<moveit_msgs::GetPositionIK> ("/compute_ik");
+	
+	
+	moveit_msgs::GetPositionIK::Request ikine_request;
+	moveit_msgs::GetPositionIK::Response ikine_response;
+	ikine_request.ik_request.group_name = "arm";
+	ikine_request.ik_request.pose_stamped = p;
+	
+	/* Call the service */
+	if(ikine_client.call(ikine_request, ikine_response)){
+		ROS_INFO("IK service call success:");
+		//ROS_INFO_STREAM(ikine_response);
+	} else {
+		ROS_INFO("IK service call FAILED. Exiting");
+	}
+	
+	return ikine_response;
+}
 
 //get the recorded topics
 
@@ -161,6 +184,8 @@ int main (int argc, char** argv)
 	
 
 	
+	goal_pub = n.advertise<geometry_msgs::PoseStamped>("goal_picked", 1);
+	
 	//create subscriber to joint angles
 	//ros::Subscriber sub_angles = n.subscribe ("/joint_states", 1, joint_state_cb);
 	
@@ -203,18 +228,48 @@ int main (int argc, char** argv)
 	}		
 	//if(heardGoal){
 		
+		//may not need used for robustness
+
+		for(int changex = 0; changex < 1.5; changex += .05){
+			for(int changey = 0; changey < 1.5; changey += .05){
+				first_goal.pose.position.x += changex;
+				first_goal.pose.position.y += changey;
+				moveit_msgs::GetPositionIK::Response  ik_response_approach = computeIK(n,first_goal);
+				if (ik_response_approach.error_code.val == 1){
+					goal_pub.publish(first_goal);
+					
+					break;
+					break;
+				}
+			}
+		}
+		
+		pressEnter();
+		ROS_INFO("goal picked...check if pose is what you want in rviz if not ctr c.");
+		//segbot_arm_manipulation::moveToPoseMoveIt(n,first_goal);
+		
+		
 		//made vision calls check in rviz to see if correct then procede
 		pressEnter();
+		
 		ROS_INFO("Demo starting...Move the arm to a 'ready' position .");
 		segbot_arm_manipulation::homeArm(n);
 		
 		ros::spinOnce();
-		if(client_move.call(mico_srv)){
+		
+		
+		//pressEnter();
+		//ROS_INFO("goal picked...check if pose is what you want in rviz if not ctr c.");
+		segbot_arm_manipulation::moveToPoseMoveIt(n,first_goal);
+		
+		ros::spinOnce();
+		
+		/*if(client_move.call(mico_srv)){
 			ROS_INFO(" entered srv move 1 ");
 		} else {
 			ROS_INFO("didn't entered srv move 1 ");
 		}
-		
+		*/
 		/*mico_srv.request.target = second_goal;
 		//goal_pose.position.y += .1;
 		ros::spinOnce();
