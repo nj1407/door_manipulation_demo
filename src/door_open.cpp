@@ -163,6 +163,9 @@ void goal_cb (const geometry_msgs::PoseStampedConstPtr& input)
 		ROS_INFO("entered goal_cb");
 		first_goal.header = input->header;
 		first_goal.pose = input->pose; 
+		second_goal.header = input->header;
+		second_goal.pose = input->pose;
+		second_goal.pose.position.z += .1;
 		heardGoal = true;
 		
 }
@@ -227,84 +230,68 @@ int main (int argc, char** argv)
 		ROS_INFO("didn't enter");
 	}		
 	//if(heardGoal){
-		
 		//may not need used for robustness
-		int changex = 0;
-		int changey = 0;
+		
+		//checks to see if can reach both poses though inverse kinematics
+		int changex1 = 0;
+		int changey1 = 0;
+		int changex2 = 0;
+		int changey2 = 0;
 		bool isReachable = false;
-		while( changex < .2 && !isReachable){
-			while( changey < .2 && !isReachable){
+		while( changex1 < .2 && !isReachable){
+			while( changey1 < .2 && !isReachable){
 				moveit_msgs::GetPositionIK::Response  ik_response_approach = computeIK(n,first_goal);
 				if(ik_response_approach.error_code.val == 1){
 					goal_pub.publish(first_goal);
 					ROS_INFO("entered");
-					isReachable = true;
+					while( changex2 < .2 && !isReachable){
+						while( changey2 < .2 && !isReachable){
+							moveit_msgs::GetPositionIK::Response  ik_response_approach = computeIK(n,first_goal);
+							if(ik_response_approach.error_code.val == 1){
+							goal_pub.publish(first_goal);
+							ROS_INFO("entered");
+							isReachable = true;
+							}	
+							changey2 += .05;
+						}		
+					changex2 += .05;
+					}
 				}	
+				changey1 += .05;
 			}	
+			changex1 += .05;
 		}	
 
-		/*for(int changex = 0; changex < 1.5; changex += .05){
-			for(int changey = 0; changey < 1.5; changey += .05){
-				first_goal.pose.position.x += changex;
-				first_goal.pose.position.y += changey;
-				moveit_msgs::GetPositionIK::Response  ik_response_approach = computeIK(n,first_goal);
-				if (ik_response_approach.error_code.val == 1){
-					goal_pub.publish(first_goal);
-					
-					break;
-					
-				}
-				if(ik_response_approach.error_code.val == 1){
-					break;
-				}
-			}
-		}*/
 	    if(isReachable = true){	
-		pressEnter();
-		ROS_INFO("goal picked...check if pose is what you want in rviz if not ctr c.");
-		//segbot_arm_manipulation::moveToPoseMoveIt(n,first_goal);
-		goal_pub.publish(first_goal);
-		
-		//made vision calls check in rviz to see if correct then procede
-		pressEnter();
-		
-		//ROS_INFO("Demo starting...Move the arm to a 'ready' position .");
-		//segbot_arm_manipulation::homeArm(n);
-		
-		ros::spinOnce();
-		
-		
-		//pressEnter();
-		//ROS_INFO("goal picked...check if pose is what you want in rviz if not ctr c.");
-		segbot_arm_manipulation::moveToPoseMoveIt(n,first_goal);
-		
-		ros::spinOnce();                                            
-		
-		/*if(client_move.call(mico_srv)){
-			ROS_INFO(" entered srv move 1 ");
-		} else {
-			ROS_INFO("didn't entered srv move 1 ");
-		}
-		*/
-		/*mico_srv.request.target = second_goal;
-		//goal_pose.position.y += .1;
-		ros::spinOnce();
-		if(client_move.call(mico_srv)){
-			ROS_INFO(" entered srv move 2 ");
-		} else {
-			ROS_INFO("didn't entered srv move 2 ");
-		}
-		*/
-		
-		//ros::spinOnce();
-		pressEnter();
-		ROS_INFO("Demo ending...arm will move back 'ready' position .");
-		//segbot_arm_manipulation::moveToJointState(n,joint_state_outofview);
-		
-		//refresh rate
-		double ros_rate = 3.0;
-		ros::Rate r(ros_rate);
-		
+			pressEnter();
+			ROS_INFO("goal picked...check if pose is what you want in rviz if not ctr c.");
+			//segbot_arm_manipulation::moveToPoseMoveIt(n,first_goal);
+			goal_pub.publish(first_goal);
+			
+			//made vision calls check in rviz to see if correct then procede
+			pressEnter();
+			
+			//ROS_INFO("Demo starting...Move the arm to a 'ready' position .");
+			//segbot_arm_manipulation::homeArm(n);
+			
+			ros::spinOnce();
+			
+			
+			//pressEnter();
+			//ROS_INFO("goal picked...check if pose is what you want in rviz if not ctr c.");
+			segbot_arm_manipulation::moveToPoseMoveIt(n,first_goal);
+			
+			ros::spinOnce();                                            
+			
+			//ros::spinOnce();
+			pressEnter();
+			ROS_INFO("Demo ending...arm will move back 'ready' position .");
+			//segbot_arm_manipulation::moveToJointState(n,joint_state_outofview);
+			
+			//refresh rate
+			double ros_rate = 3.0;
+			ros::Rate r(ros_rate);
+			
 	} else {
 	
 		ROS_INFO("Demo ending...didn't find an approac point .");
