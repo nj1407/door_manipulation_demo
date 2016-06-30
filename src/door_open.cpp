@@ -229,6 +229,18 @@ int main (int argc, char** argv)
 	//if(heardGoal){
 		
 		//may not need used for robustness
+		int changex = 0;
+		int changey = 0;
+		bool isReachable = false;
+		while( changex < .2 && !isReachable){
+			while( changey < .2 && ! isReachable){
+				moveit_msgs::GetPositionIK::Response  ik_response_approach = computeIK(n,first_goal);
+				if(ik_response_approach.error_code.val == 1){
+					goal_pub.publish(first_goal);
+					isReachable = true;
+				}	
+			}	
+		}	
 
 		/*for(int changex = 0; changex < 1.5; changex += .05){
 			for(int changey = 0; changey < 1.5; changey += .05){
