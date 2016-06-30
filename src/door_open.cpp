@@ -82,7 +82,8 @@ bool heardJoinstState = false;
 bool heardGoal = false;
 bool g_caught_sigint = false;
 
-ros::Publisher goal_pub;
+ros::Publisher first_goal_pub;
+ros::Publisher second_goal_pub;
 
 /* what happens when ctr-c is pressed */
 
@@ -171,12 +172,13 @@ void goal_cb (const geometry_msgs::PoseStampedConstPtr& input)
 }
 
 //get the second goal *may not be nesscecary
+/*
 void goal_cb_2 (const geometry_msgs::PoseStampedConstPtr& input)
 {
 		ROS_INFO("entered goal_cb2");
 		second_goal.header = input->header;
 		second_goal.pose = input->pose; 
-}
+}*/
 
 int main (int argc, char** argv)
 {
@@ -187,7 +189,8 @@ int main (int argc, char** argv)
 	
 
 	
-	goal_pub = n.advertise<geometry_msgs::PoseStamped>("goal_picked", 1);
+	first_goal_pub = n.advertise<geometry_msgs::PoseStamped>("goal_picked", 1);
+	second_goal_pub = n.advertise<geometry_msgs::PoseStamped>("goal_picked_second", 1);
 	
 	//create subscriber to joint angles
 	//ros::Subscriber sub_angles = n.subscribe ("/joint_states", 1, joint_state_cb);
@@ -195,7 +198,6 @@ int main (int argc, char** argv)
 	//subsrcibe to goals
 	ros::Subscriber goal_sub = n.subscribe ("/goal_to_go", 1,goal_cb);
 
-	ros::Subscriber goal_sub_2 = n.subscribe ("goal_to_go_2", 1,goal_cb_2);
 	
 	//create subscriber to tool position topic
 	//ros::Subscriber sub_tool = n.subscribe("/mico_arm_driver/out/tool_position", 1, toolpos_cb);
@@ -242,15 +244,16 @@ int main (int argc, char** argv)
 			while( changey1 < .2 && !isReachable){
 				moveit_msgs::GetPositionIK::Response  ik_response_approach = computeIK(n,first_goal);
 				if(ik_response_approach.error_code.val == 1){
-					goal_pub.publish(first_goal);
-					ROS_INFO("entered");
+					ROS_INFO("entered first pose passed");
+					first_goal_pub.publish(first_goal);
 					while( changex2 < .2 && !isReachable){
 						while( changey2 < .2 && !isReachable){
 							moveit_msgs::GetPositionIK::Response  ik_response_approach = computeIK(n,first_goal);
 							if(ik_response_approach.error_code.val == 1){
-							goal_pub.publish(first_goal);
-							ROS_INFO("entered");
-							isReachable = true;
+								first_goal_pub.publish(first_goal);
+								second_goal_pub.publish(second_goal);
+								ROS_INFO("entered second pose passed");
+								isReachable = true;
 							}	
 							changey2 += .05;
 						}		
@@ -266,7 +269,7 @@ int main (int argc, char** argv)
 			pressEnter();
 			ROS_INFO("goal picked...check if pose is what you want in rviz if not ctr c.");
 			//segbot_arm_manipulation::moveToPoseMoveIt(n,first_goal);
-			goal_pub.publish(first_goal);
+			first_goal_pub.publish(first_goal);
 			
 			//made vision calls check in rviz to see if correct then procede
 			pressEnter();
@@ -284,13 +287,20 @@ int main (int argc, char** argv)
 			ros::spinOnce();                                            
 			
 			//ros::spinOnce();
+			
+			
+			ROS_INFO("2nd goal picked...check if pose is what you want in rviz if not ctr c.");
+			pressEnter();
+			segbot_arm_manipulation::moveToPoseMoveIt(n,second_goal);
+			ros::spinOnce();                 
+			
 			pressEnter();
 			ROS_INFO("Demo ending...arm will move back 'ready' position .");
 			//segbot_arm_manipulation::moveToJointState(n,joint_state_outofview);
 			
 			//refresh rate
-			double ros_rate = 3.0;
-			ros::Rate r(ros_rate);
+			//double ros_rate = 3.0;
+			//ros::Rate r(ros_rate);
 			
 	} else {
 	
