@@ -233,10 +233,11 @@ int main (int argc, char** argv)
 		int changey = 0;
 		bool isReachable = false;
 		while( changex < .2 && !isReachable){
-			while( changey < .2 && ! isReachable){
+			while( changey < .2 && !isReachable){
 				moveit_msgs::GetPositionIK::Response  ik_response_approach = computeIK(n,first_goal);
 				if(ik_response_approach.error_code.val == 1){
 					goal_pub.publish(first_goal);
+					ROS_INFO("entered");
 					isReachable = true;
 				}	
 			}	
@@ -258,7 +259,7 @@ int main (int argc, char** argv)
 				}
 			}
 		}*/
-		
+	    if(isReachable = true){	
 		pressEnter();
 		ROS_INFO("goal picked...check if pose is what you want in rviz if not ctr c.");
 		//segbot_arm_manipulation::moveToPoseMoveIt(n,first_goal);
@@ -267,8 +268,8 @@ int main (int argc, char** argv)
 		//made vision calls check in rviz to see if correct then procede
 		pressEnter();
 		
-		ROS_INFO("Demo starting...Move the arm to a 'ready' position .");
-		segbot_arm_manipulation::homeArm(n);
+		//ROS_INFO("Demo starting...Move the arm to a 'ready' position .");
+		//segbot_arm_manipulation::homeArm(n);
 		
 		ros::spinOnce();
 		
@@ -304,9 +305,9 @@ int main (int argc, char** argv)
 		double ros_rate = 3.0;
 		ros::Rate r(ros_rate);
 		
-//	} else {
+	} else {
 	
 		ROS_INFO("Demo ending...didn't find an approac point .");
-	//}	
+	}	
 	
 };
