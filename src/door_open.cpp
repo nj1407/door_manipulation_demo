@@ -71,6 +71,7 @@
 
 Eigen::Vector4f centroid;
 
+geometry_msgs::PoseStamped start_pose;
 geometry_msgs::PoseStamped first_goal;
 geometry_msgs::PoseStamped second_goal;
 sensor_msgs::JointState joint_state_outofview;
@@ -187,7 +188,15 @@ int main (int argc, char** argv)
 	ros::init (argc, argv, "segbot_arm_door_open_detector");
 	ros::NodeHandle n;
 	
-
+	//tested to be you of way of xtion camera for starting pose
+	start_pose.header.frame_id = "mico_link_base";
+	start_pose.pose.position.x = 0.161036163568;
+	start_pose.pose.position.y = -0.37887275219;
+	start_pose.pose.position.z = 0.242402374744;
+	start_pose.pose.orientation.x = 0.419507177788;
+	start_pose.pose.orientation.y = 0.365710866911;
+	start_pose.pose.orientation.z = 0.458010463645;
+	start_pose.pose.orientation.w = 0.693177974837;
 	
 	first_goal_pub = n.advertise<geometry_msgs::PoseStamped>("goal_picked", 1);
 	second_goal_pub = n.advertise<geometry_msgs::PoseStamped>("goal_picked_second", 1);
@@ -276,6 +285,7 @@ int main (int argc, char** argv)
 			
 			//ROS_INFO("Demo starting...Move the arm to a 'ready' position .");
 			//segbot_arm_manipulation::homeArm(n);
+			//segbot_arm_manipulation::moveToPoseMoveIt(n,start_pose);
 			
 			ros::spinOnce();
 			
