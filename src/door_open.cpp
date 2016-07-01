@@ -77,7 +77,8 @@ geometry_msgs::PoseStamped second_goal;
 sensor_msgs::JointState joint_state_outofview;
 sensor_msgs::JointState current_state;
 geometry_msgs::PoseStamped current_pose;
-
+geometry_msgs::Quaternion plane_coeff;
+geometry_msgs::Quaternion orig_plane_coeff;
 bool heardPose = false;
 bool heardJoinstState = false;
 bool heardGoal = false;
@@ -87,6 +88,13 @@ ros::Publisher first_goal_pub;
 ros::Publisher second_goal_pub;
 
 /* what happens when ctr-c is pressed */
+
+bool similar(float x1, float x2){
+	if(x1 - .05 < x2 && x2 < x1 +.05){
+		return true;
+	}
+	return false;
+}	
 
 void sig_handler(int sig)
 {
@@ -172,9 +180,9 @@ void goal_cb (const geometry_msgs::PoseStampedConstPtr& input)
 		
 }
 
-/*void plane_coeff_cb (const std::vector<double>ConstPtr& input){
-	
-}	*/
+void plane_coeff_cb (const geometry_msgs::QuaternionConstPtr& input){
+	plane_coeff = *input;
+}	
 
 //get the second goal *may not be nesscecary
 /*
@@ -211,7 +219,7 @@ int main (int argc, char** argv)
 	//subsrcibe to goals
 	ros::Subscriber goal_sub = n.subscribe ("/goal_to_go", 1,goal_cb);
 
-	//ros::Subscriber plane_coeff_sub = n.subscribe ("/plane_coeff", 1,plane_coeff_cb);
+	ros::Subscriber plane_coeff_sub = n.subscribe ("/plane_coeff", 1,plane_coeff_cb);
 	
 	//create subscriber to tool position topic
 	//ros::Subscriber sub_tool = n.subscribe("/mico_arm_driver/out/tool_position", 1, toolpos_cb);
@@ -224,6 +232,7 @@ int main (int argc, char** argv)
 	
 	
 	signal(SIGINT, sig_handler);
+	orig_plane_coeff = plane_coeff; 
 	
 	//get arm position
 	segbot_arm_manipulation::closeHand();
@@ -328,7 +337,21 @@ int main (int argc, char** argv)
 			pressEnter();
 			ROS_INFO("Demo ending...arm will move back 'ready' position .");
 			//segbot_arm_manipulation::moveToJointState(n,joint_state_outofview);
-			
+			segbot_arm_manipulation::moveToPoseMoveIt(n,start_pose);
+			segbot_arm_manipulation::homeArm(n);
+			if(client.call(door_srv)){
+			ros::spinOnce();
+			ROS_INFO("entered");
+
+			} else {
+				ROS_INFO("didn't enter vision");
+			}
+			if(similar(orig_plane_coeff.x, plane_coeff.x) && similar(orig_plane_coeff.y, plane_coeff.y) && similar(orig_plane_coeff.z, plane_coeff.z)
+				&& similar(orig_plane_coeff.w, plane_coeff.w)){
+					ROS_INFO("didn't move door");
+			} else {
+					ROS_INFO("moved door");
+			}	
 			//refresh rate
 			//double ros_rate = 3.0;
 			//ros::Rate r(ros_rate);
