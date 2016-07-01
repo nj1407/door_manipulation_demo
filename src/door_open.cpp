@@ -172,6 +172,10 @@ void goal_cb (const geometry_msgs::PoseStampedConstPtr& input)
 		
 }
 
+/*void plane_coeff_cb (const std::vector<double>ConstPtr& input){
+	
+}	*/
+
 //get the second goal *may not be nesscecary
 /*
 void goal_cb_2 (const geometry_msgs::PoseStampedConstPtr& input)
@@ -207,6 +211,7 @@ int main (int argc, char** argv)
 	//subsrcibe to goals
 	ros::Subscriber goal_sub = n.subscribe ("/goal_to_go", 1,goal_cb);
 
+	//ros::Subscriber plane_coeff_sub = n.subscribe ("/plane_coeff", 1,plane_coeff_cb);
 	
 	//create subscriber to tool position topic
 	//ros::Subscriber sub_tool = n.subscribe("/mico_arm_driver/out/tool_position", 1, toolpos_cb);
@@ -216,6 +221,7 @@ int main (int argc, char** argv)
 	ros::ServiceClient client = n.serviceClient<door_manipulation_demo::door_perception>("/door_handle_detection/door_perception");
 	
 	ros::ServiceClient client_move = n.serviceClient<moveit_utils::MicoMoveitCartesianPose>("mico_cartesianpose_service");
+	
 	
 	signal(SIGINT, sig_handler);
 	

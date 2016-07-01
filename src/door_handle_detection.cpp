@@ -87,6 +87,7 @@ PointCloudT::Ptr cloud_blobs (new PointCloudT);
 PointCloudT::Ptr empty_cloud (new PointCloudT);
 std::vector<PointCloudT::Ptr > clusters;
 std::vector<PointCloudT::Ptr > clusters_on_plane;
+//std::vector<double> plane_coeff; 
 
 sensor_msgs::PointCloud2 cloud_ros;
 
@@ -102,7 +103,9 @@ ros::Publisher door_cloud_pub;
 ros::Publisher move_point;
 ros::Publisher goal_pub;
 ros::Publisher goal_pub_2;
+ros::Publisher plane_coeff_pub;
 PointCloudT::Ptr cloud_costmap (new PointCloudT);
+Eigen::Vector4f plane_coefficients;
 
 //true if Ctrl-C is pressed
 bool g_caught_sigint=false;
@@ -331,7 +334,7 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 	ROS_INFO("passed first filter");
 	
 	//get the plane coefficients
-	Eigen::Vector4f plane_coefficients;
+	//Eigen::Vector4f plane_coefficients;
 	
 	plane_coefficients(0)=coefficients->values[0];
 	plane_coefficients(1)=coefficients->values[1];
@@ -340,6 +343,15 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 	
 	ROS_INFO("Planar coefficients: %f, %f, %f, %f",
 		plane_coefficients(0),plane_coefficients(1),plane_coefficients(2),	plane_coefficients(3));
+	/*
+	plane_coeff.push_back(plane_coefficients(0));
+	plane_coeff.push_back(plane_coefficients(1));
+	plane_coeff.push_back(plane_coefficients(2));
+	plane_coeff.push_back(plane_coefficients(3));
+	
+	
+	plane_coeff_pub.publish(plane_coeff);
+	*/
 	
 	bool plane_is_not_vertical = plane_coefficients(1) > -.5 && plane_coefficients(3) > 0;
 
@@ -369,7 +381,7 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 		res.cloud_plane_coef[i] = plane_coefficients(i);
 	}
 	
-	//vhech if valid information
+	//check if valid information
 	if(clusters_on_plane.size() < 1 || plane_is_not_vertical){
 		ROS_INFO("Found 0 clusters or plane isn't vertical did not continue");	
 	} else {
@@ -460,10 +472,11 @@ int main (int argc, char** argv)
 	//debugging publisher
 	cloud_pub = n.advertise<sensor_msgs::PointCloud2>("door_handle_detection/cloud", 1);
 	door_cloud_pub = n.advertise<sensor_msgs::PointCloud2>("door_handle_detection/plane_cloud", 1);
-
+	//plane_coeff_pub = n.advertise<Eigin::vector<double> >("plane_coeff", 1);
+	
 	//publisher for planar coefficents
 	//tf::transformEigenToTF(planar_coefficent_pub);
-	//planar_coefficent_pub = n.advertise<std_msgs::Vector4f>("planar_coefficents", 1);
+	//plane_coeff_pub = n.advertise<Eigen::Vector4f>("planar_coefficents", 1);
 	
 	//service
 	ros::ServiceServer service = n.advertiseService("door_handle_detection/door_perception", seg_cb);
