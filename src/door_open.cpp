@@ -238,8 +238,12 @@ int main (int argc, char** argv)
 			//ros::spinOnce();
 		//}	
 	} else {
-		ROS_INFO("didn't enter");
+		ROS_INFO("didn't enter vision");
 	}		
+	
+	segbot_arm_manipulation::homeArm(n);
+	segbot_arm_manipulation::moveToPoseMoveIt(n,start_pose);
+	
 	//if(heardGoal){
 		//may not need used for robustness
 		
@@ -250,13 +254,21 @@ int main (int argc, char** argv)
 		int changey2 = 0;
 		bool isReachable = false;
 		while( changex1 < .2 && !isReachable){
+			first_goal.pose.position.x += changex1;
+			
 			while( changey1 < .2 && !isReachable){
+				first_goal.pose.position.y += changey1;
 				moveit_msgs::GetPositionIK::Response  ik_response_approach = computeIK(n,first_goal);
+				
 				if(ik_response_approach.error_code.val == 1){
 					ROS_INFO("entered first pose passed");
 					first_goal_pub.publish(first_goal);
+					
 					while( changex2 < .2 && !isReachable){
+						second_goal.pose.position.x += changex2;
+						
 						while( changey2 < .2 && !isReachable){
+							second_goal.pose.position.y += changey2;
 							moveit_msgs::GetPositionIK::Response  ik_response_approach = computeIK(n,first_goal);
 							if(ik_response_approach.error_code.val == 1){
 								first_goal_pub.publish(first_goal);
@@ -266,9 +278,12 @@ int main (int argc, char** argv)
 							}	
 							changey2 += .05;
 						}		
+						
 					changex2 += .05;
 					}
+					
 				}	
+				
 				changey1 += .05;
 			}	
 			changex1 += .05;

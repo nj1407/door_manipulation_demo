@@ -404,32 +404,7 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 		centroid.y() += .1;
 		door_cloud_pub.publish(cloud_ros);
 		
-		/*pcl::PointXYZ move_to;
-		//publishes an xyz point to see where goal in rviz is 
-		pcl::PointCloud<pcl::PointXYZ> move_to_point;
-		move_to.x = centroid.x();
-		move_to.y = centroid.y();
-		move_to.z = centroid.z();
-		move_to_point.push_back(move_to);
-		move_to_point.header.frame_id = cloud->header.frame_id;
-		move_point.publish(move_to_point.makeShared());
-		*/
-		
-		
 		//do the tf transformation for the published cloud
-		
-		
-		
-		
-		/*geometry_msgs::PoseStamped goal;
-		goal.pose.position.x = transform.getOrigin().getX();
-		goal.pose.position.y = transform.getOrigin().getY();
-		goal.pose.position.z = transform.getOrigin().getZ();
-		//get it flat (180 degress)
-		goal.pose.orientation.x = .554211797868;
-		goal.pose.orientation.y = .413999727756;
-		goal.pose.orientation.z = .413999727756;
-		goal.pose.orientation.w = .595696187745;*/
 		
 		//get pose
 		geometry_msgs::PoseStamped goal;
@@ -437,10 +412,6 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 		goal.pose.position.y = centroid.y();
 		goal.pose.position.z = centroid.z();
 		//get it flat (180 degress)
-		/*goal.pose.orientation.x = .554211797868;
-		goal.pose.orientation.y = .413999727756;
-		goal.pose.orientation.z = .413999727756;
-		goal.pose.orientation.w = .595696187745;*/
 		goal.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(0,0,0);
 		goal.header.frame_id = cloud_ros.header.frame_id;
 		
