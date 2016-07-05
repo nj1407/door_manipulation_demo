@@ -66,6 +66,8 @@
 #include <stdint.h>
 
 #include <segbot_arm_manipulation/arm_utils.h>
+//#include <segbot_arm_manipulation/grasp_utils.h>
+#include "agile_grasp/Grasps.h"
 
 #define NUM_JOINTS 8
 
@@ -97,10 +99,18 @@ bool similar(float x1, float x2){
 	return false;
 }	
 
-bool didReachPose (){
+
+
+struct GraspCartesianCommand {
+	sensor_msgs::JointState approach_q;
+	geometry_msgs::PoseStamped approach_pose;
+	
+	sensor_msgs::JointState grasp_q;
+	geometry_msgs::PoseStamped grasp_pose;
 	
 	
-}
+};
+
 void sig_handler(int sig)
 {
   g_caught_sigint = true;
@@ -219,7 +229,7 @@ int main (int argc, char** argv)
 	second_goal_pub = n.advertise<geometry_msgs::PoseStamped>("goal_picked_second", 1);
 	
 	//create subscriber to joint angles
-	//ros::Subscriber sub_angles = n.subscribe ("/joint_states", 1, joint_state_cb);
+	ros::Subscriber sub_angles = n.subscribe ("/joint_states", 1, joint_state_cb);
 	
 	//subsrcibe to goals
 	ros::Subscriber goal_sub = n.subscribe ("/goal_to_go", 1,goal_cb);
@@ -299,6 +309,8 @@ int main (int argc, char** argv)
 	int i = 0;
 	bool isReachable = false;
 	//pick points to publish at
+	std::vector<geometry_msgs::PoseStamped> pose1;
+	std::vector<geometry_msgs::PoseStamped> pose2;
 	while( !isReachable & i < sizeof(poses_msg_first.poses)){
 		geometry_msgs::PoseStamped temp;
 		temp.header = first_goal.header;
@@ -308,6 +320,7 @@ int main (int argc, char** argv)
 				ROS_INFO("entered first pose passed");
 				first_goal_pub.publish(poses_msg_first.poses.at(i));
 				first_goal.pose = poses_msg_first.poses.at(i);
+				pose1.push_back(first_goal);
 				int j = 0;
 				while( !isReachable & i < sizeof(poses_msg_2nd.poses)){
 					geometry_msgs::PoseStamped temp2;
@@ -315,9 +328,17 @@ int main (int argc, char** argv)
 					temp2.pose = poses_msg_2nd.poses.at(j);
 					moveit_msgs::GetPositionIK::Response  ik_response_approach = computeIK(n,temp2);
 					if(ik_response_approach.error_code.val == 1){
+						
+						//std::vector<double> D = segbot_arm_manipulation::getJointAngleDifferences(ik_response_approach.solution.joint_state, ik_response_grasp.solution.joint_state);
+						//double sum_d = 0;
+						//for (int p = 0; p < D.size(); p++){
+							//sum_d += D[p];
+						//}
+						
 						ROS_INFO("entered second pose passed");
 						second_goal_pub.publish(poses_msg_2nd.poses.at(j));
 						second_goal.pose = poses_msg_2nd.poses.at(j);
+						pose2.push_back(second_goal);
 						isReachable = true;
 					}	
 					j++;
@@ -326,6 +347,7 @@ int main (int argc, char** argv)
 			i++;
 	}	
 	
+//	GraspCartesianCommand gc_i = segbot_arm_manipulation::grasp_utils::constructGraspCommand(current_grasps.grasps.at(i),HAND_OFFSET_APPROACH,HAND_OFFSET_GRASP, sensor_frame_id);
 	
 	//if(heardGoal){
 	/* //just get first poitns that works doeesn't check for anything else
