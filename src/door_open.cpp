@@ -175,7 +175,7 @@ void goal_cb (const geometry_msgs::PoseStampedConstPtr& input)
 		first_goal.pose = input->pose; 
 		second_goal.header = input->header;
 		second_goal.pose = input->pose;
-		second_goal.pose.position.z += .1;
+		second_goal.pose.position.x += .1;
 		heardGoal = true;
 		
 }
@@ -333,7 +333,8 @@ int main (int argc, char** argv)
 			pressEnter();
 			segbot_arm_manipulation::moveToPoseMoveIt(n,second_goal);
 			ros::spinOnce();                 
-			
+			segbot_arm_manipulation::moveToPoseMoveIt(n,second_goal);
+			ros::spinOnce();  
 			pressEnter();
 			ROS_INFO("Demo ending...arm will move back 'ready' position .");
 			//segbot_arm_manipulation::moveToJointState(n,joint_state_outofview);
