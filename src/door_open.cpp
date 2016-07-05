@@ -74,6 +74,7 @@ Eigen::Vector4f centroid;
 geometry_msgs::PoseStamped start_pose;
 geometry_msgs::PoseStamped first_goal;
 geometry_msgs::PoseStamped second_goal;
+geometry_msgs::PoseStamped arm_pose;
 sensor_msgs::JointState joint_state_outofview;
 sensor_msgs::JointState current_state;
 geometry_msgs::PoseStamped current_pose;
@@ -96,6 +97,10 @@ bool similar(float x1, float x2){
 	return false;
 }	
 
+bool didReachPose (){
+	
+	
+}
 void sig_handler(int sig)
 {
   g_caught_sigint = true;
@@ -137,10 +142,8 @@ void joint_state_cb (const sensor_msgs::JointStateConstPtr& input) {
 }
 
 
-void toolpos_cb (const geometry_msgs::PoseStamped &msg) {
-  current_pose = msg;
-  heardPose = true;
-  //  ROS_INFO_STREAM(current_pose);
+void toolpos_cb (const geometry_msgs::PoseStamped& msg) {
+  current_pose = *msg;
 }
 
 
@@ -177,6 +180,13 @@ void goal_cb (const geometry_msgs::PoseStampedConstPtr& input)
 		second_goal.pose = input->pose;
 		second_goal.pose.position.x += .1;
 		heardGoal = true;
+		
+}
+void toolpos_cb (const geometry_msgs::PoseStampedConstPtr& input)
+{
+		ROS_INFO("entered toolposecb");
+		current_pose.header = input->header;
+		current_pose.pose = input->pose;
 		
 }
 
@@ -222,7 +232,7 @@ int main (int argc, char** argv)
 	ros::Subscriber plane_coeff_sub = n.subscribe ("/plane_coeff", 1,plane_coeff_cb);
 	
 	//create subscriber to tool position topic
-	//ros::Subscriber sub_tool = n.subscribe("/mico_arm_driver/out/tool_position", 1, toolpos_cb);
+	ros::Subscriber sub_tool = n.subscribe("/mico_arm_driver/out/tool_position", 1, toolpos_cb);
 	
 	//service
 	
