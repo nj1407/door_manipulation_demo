@@ -142,11 +142,6 @@ void joint_state_cb (const sensor_msgs::JointStateConstPtr& input) {
 }
 
 
-void toolpos_cb (const geometry_msgs::PoseStamped& msg) {
-  current_pose = *msg;
-}
-
-
 // Blocking call for user input
 void pressEnter(){
 	std::cout << "Press the ENTER key to continue";
