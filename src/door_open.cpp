@@ -277,7 +277,7 @@ int main (int argc, char** argv)
 	orig_plane_coeff = plane_coeff; 
 	
 	//get arm position
-	//segbot_arm_manipulation::closeHand();
+	segbot_arm_manipulation::closeHand();
 	//listenForArmData(30.0);
 	//joint_state_outofview = current_state;
 	
@@ -307,9 +307,9 @@ int main (int argc, char** argv)
 	
 	//potential_approach = first_goal.pose;
 	ROS_INFO("passed .5");
-	for(int changex = 0; changex < 3; changex++){
+	for(int changex = 0; changex < 8; changex++){
 		int occurances = 0;
-		for(int changey = 0; changey < 3; changey++){
+		for(int changey = 0; changey < 8; changey++){
 			geometry_msgs::Pose potential_approach;
 			potential_approach = first_goal.pose;
 			ROS_INFO("passed .5");
@@ -329,18 +329,18 @@ int main (int argc, char** argv)
 	poses_msg_first.header.stamp = second_goal.header.stamp;
 	poses_msg_first.header.frame_id = "mico_api_origin";
 	
-	int changex2 = 0;
-	int changey2 = 0;
-	while(changex2 < 3){
-		while( changey2 < .3){
+	int changex = 0;
+	int changey = 0;
+	while(changex < 8){
+		while( changey < 8){
 			geometry_msgs::Pose push_point;
 		push_point = second_goal.pose;
 			push_point.position.x += .05;
 			push_point.position.y += .05;
 			poses_msg_first.poses.push_back(push_point);
-			changey2 ++;
+			changey ++;
 		}	
-		changex2 ++;
+		changex ++;
 	}
 	int i = 0;
 			ROS_INFO("passed 2");
@@ -414,8 +414,8 @@ int main (int argc, char** argv)
 							if (sum_d < ANGULAR_DIFF_THRESHOLD){
 								//ROS_INFO("Angle diffs for grasp %i: %f, %f, %f, %f, %f, %f",(int)grasp_commands.size(),D[0],D[1],D[2],D[3],D[4],D[5]);
 								
-								//ROS_INFO("Sum diff: %f",sum_d);
-							
+								ROS_INFO("Sum diff: %f",sum_d);
+								ROS_INFO("added to push commands size %d", push_commands.size());
 								//store the IK results
 								
 								push_commands.push_back(temp_first_goal);
@@ -445,6 +445,7 @@ int main (int argc, char** argv)
 							if (d_i < min_diff){
 								selected_grasp_index = (int)i;
 								min_diff = d_i;
+								ROS_INFO("picked orientation");
 							}
 						}
 								
@@ -466,10 +467,10 @@ int main (int argc, char** argv)
 						int changex2 = 0;
 						int changey2 = 0;
 						bool isReachable = false;
-						while( changex1 < .2 && !isReachable){
+						while( changex1 < 3 && !isReachable){
 							first_goal.pose.position.x += .05;
 							
-							while( changey1 < .2 && !isReachable){
+							while( changey1 < 3 && !isReachable){
 								first_goal.pose.position.y += .05;
 								moveit_msgs::GetPositionIK::Response  ik_response_approach = computeIK(n,first_goal);
 								
@@ -477,10 +478,10 @@ int main (int argc, char** argv)
 									ROS_INFO("entered first pose passed");
 									first_goal_pub.publish(first_goal);
 									
-									while( changex2 < .2 && !isReachable){
+									while( changex2 < 3 && !isReachable){
 										second_goal.pose.position.x += .05;
 										
-										while( changey2 < .2 && !isReachable){
+										while( changey2 < 3 && !isReachable){
 											second_goal.pose.position.y += .05;
 											moveit_msgs::GetPositionIK::Response  ik_response_approach = computeIK(n,first_goal);
 											if(ik_response_approach.error_code.val == 1){
@@ -489,17 +490,17 @@ int main (int argc, char** argv)
 												ROS_INFO("entered second pose passed");
 												isReachable = true;
 											}	
-											changey2 += .05;
+											changey2 ++;
 										}		
 										
-									changex2 += .05;
+									changex2 ++;
 									}
 									
 								}	
 								
-								changey1 += .05;
+								changey1 ++;
 							}	
-							changex1 += .05;
+							changex1 ++;
 						}	
 						*/
 						//if(isReachable = true){	
@@ -520,15 +521,32 @@ int main (int argc, char** argv)
 							ros::spinOnce();
 							
 							
-							//pressEnter();
-							//ROS_INFO("goal picked...check if pose is what you want in rviz if not ctr c.");
+							pressEnter();
+							ROS_INFO("goal picked...check if pose is what you want in rviz if not ctr c.");
 							segbot_arm_manipulation::moveToPoseMoveIt(n,first_goal);
 							
 							ros::spinOnce();                                            
 							segbot_arm_manipulation::moveToPoseMoveIt(n,first_goal);
 							ros::spinOnce(); 
 							//ros::spinOnce();
+							bool isReachable = false;
+							while( changex1 < 3 && !isReachable){
+							second_goal.pose.position.x += .05;
 							
+							while( changey1 < 3 && !isReachable){
+								second_goal.pose.position.y += .05;
+								moveit_msgs::GetPositionIK::Response  ik_response_approach = computeIK(n,first_goal);
+								
+								if(ik_response_approach.error_code.val == 1){
+									ROS_INFO("entered first pose passed");
+									second_goal_pub.publish(second_goal);
+									isReachable = true;
+								}	
+								
+								changey1 ++;
+							}	
+							changex1 ++;
+						}	
 							
 							ROS_INFO("2nd goal picked...check if pose is what you want in rviz if not ctr c.");
 							pressEnter();
