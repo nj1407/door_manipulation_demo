@@ -72,7 +72,7 @@
 #define NUM_JOINTS 8
 #define HAND_OFFSET_GRASP -0.02
 #define HAND_OFFSET_APPROACH -0.13
-#define ANGULAR_DIFF_THRESHOLD 100.0
+#define ANGULAR_DIFF_THRESHOLD 12.0
 
 Eigen::Vector4f centroid;
 
@@ -307,9 +307,9 @@ int main (int argc, char** argv)
 	
 	//potential_approach = first_goal.pose;
 	ROS_INFO("passed .5");
-	for(int changex = 0; changex < 8; changex++){
+	for(int changex = 0; changex < 10; changex++){
 		int occurances = 0;
-		for(int changey = 0; changey < 8; changey++){
+		for(int changey = 0; changey < 10; changey++){
 			geometry_msgs::Pose potential_approach;
 			potential_approach = first_goal.pose;
 			ROS_INFO("passed .5");
@@ -331,8 +331,8 @@ int main (int argc, char** argv)
 	
 	int changex = 0;
 	int changey = 0;
-	while(changex < 8){
-		while( changey < 8){
+	while(changex < 10){
+		while( changey < 10){
 			geometry_msgs::Pose push_point;
 		push_point = second_goal.pose;
 			push_point.position.x += .05;
@@ -342,7 +342,6 @@ int main (int argc, char** argv)
 		}	
 		changex ++;
 	}
-	int i = 0;
 			ROS_INFO("passed 2");
 	//bool isReachable = false;
 	//pick points to publish at
@@ -531,22 +530,22 @@ int main (int argc, char** argv)
 							//ros::spinOnce();
 							bool isReachable = false;
 							while( changex1 < 3 && !isReachable){
-							second_goal.pose.position.x += .05;
-							
-							while( changey1 < 3 && !isReachable){
-								second_goal.pose.position.y += .05;
-								moveit_msgs::GetPositionIK::Response  ik_response_approach = computeIK(n,first_goal);
+								second_goal.pose.position.x += .05;
 								
-								if(ik_response_approach.error_code.val == 1){
-									ROS_INFO("entered first pose passed");
-									second_goal_pub.publish(second_goal);
-									isReachable = true;
+								while( changey1 < 3 && !isReachable){
+									second_goal.pose.position.y += .05;
+									moveit_msgs::GetPositionIK::Response  ik_response_approach = computeIK(n,first_goal);
+									
+									if(ik_response_approach.error_code.val == 1){
+										ROS_INFO("entered first pose passed");
+										second_goal_pub.publish(second_goal);
+										isReachable = true;
+									}	
+									
+									changey1 ++;
 								}	
-								
-								changey1 ++;
+								changex1 ++;
 							}	
-							changex1 ++;
-						}	
 							
 							ROS_INFO("2nd goal picked...check if pose is what you want in rviz if not ctr c.");
 							pressEnter();
