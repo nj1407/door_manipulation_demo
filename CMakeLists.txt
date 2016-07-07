@@ -162,18 +162,20 @@ add_definitions(${PCL_DEFINITIONS})
 add_executable(door_handle_detection src/door_handle_detection.cpp)
 add_executable(door_open src/door_open.cpp)
 add_executable(door_open_as src/door_open_as.cpp)
-
+add_executable(door_open_client src/door_open_client.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 add_dependencies(door_handle_detection door_demo_manipulation_gencpp)
 add_dependencies(door_open door_demo_manipulation_gencpp)
 add_dependencies(door_open_as jaco_msgs_gencpp segbot_arm_manipulation_gencpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(door_open_client jaco_msgs_gencpp segbot_arm_manipulation_gencpp ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(door_handle_detection ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES})
 target_link_libraries(door_open ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES})
 target_link_libraries(door_open_as ${catkin_LIBRARIES})
+target_link_libraries(door_open_client ${catkin_LIBRARIES})
 
 #############
 ## Install ##

@@ -102,7 +102,6 @@ ros::Publisher cloud_pub;
 ros::Publisher door_cloud_pub;
 ros::Publisher move_point;
 ros::Publisher goal_pub;
-ros::Publisher goal_pub_2;
 ros::Publisher plane_coeff_pub;
 PointCloudT::Ptr cloud_costmap (new PointCloudT);
 
@@ -444,9 +443,6 @@ bool seg_cb(door_manipulation_demo::door_perception::Request &req, door_manipula
 		goal_pub.publish(goal);
 		
 		
-		
-		//goal.pose.position.z += .1;
-		//goal_pub_2.publish(goal);
 	}	
 	return true;
 }
@@ -480,7 +476,6 @@ int main (int argc, char** argv)
 
 	
 	//move_point = n.advertise<PCLCloudXYZ> ("point_to_send/cloud", 1);
-	goal_pub_2 = n.advertise<geometry_msgs::PoseStamped>("goal_to_go_2", 1);
 	goal_pub = n.advertise<geometry_msgs::PoseStamped>("goal_to_go", 1);
 	
 	//refresh rate
