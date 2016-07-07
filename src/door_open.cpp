@@ -72,7 +72,7 @@
 #define NUM_JOINTS 8
 #define HAND_OFFSET_GRASP -0.02
 #define HAND_OFFSET_APPROACH -0.13
-#define ANGULAR_DIFF_THRESHOLD 3.0
+#define ANGULAR_DIFF_THRESHOLD 100.0
 
 Eigen::Vector4f centroid;
 
@@ -403,7 +403,7 @@ int main (int argc, char** argv)
 					if (ik_response_approach.error_code.val == 1){
 							
 							//now check to see how close the two sets of joint angles are -- if the joint configurations for the approach and grasp poses differ by too much, the grasp will not be accepted
-							std::vector<double> D = segbot_arm_manipulation::getJointAngleDifferences(ik_response_approach.solution.joint_state, current_state);
+							std::vector<double> D = segbot_arm_manipulation::getJointAngleDifferences(current_state, ik_response_approach.solution.joint_state);
 							
 							double sum_d = 0;
 							for (int p = 0; p < D.size(); p++){
@@ -415,7 +415,7 @@ int main (int argc, char** argv)
 								//ROS_INFO("Angle diffs for grasp %i: %f, %f, %f, %f, %f, %f",(int)grasp_commands.size(),D[0],D[1],D[2],D[3],D[4],D[5]);
 								
 								ROS_INFO("Sum diff: %f",sum_d);
-								ROS_INFO("added to push commands size %d", push_commands.size());
+								ROS_INFO("added to push commands size"); //%d", push_commands.size());
 								//store the IK results
 								
 								push_commands.push_back(temp_first_goal);
@@ -431,7 +431,7 @@ int main (int argc, char** argv)
 		
 			} else{
 					
-					listenForArmData(30.0);
+					//listenForArmData(30.0);
 			
 					int selected_grasp_index = -1;
 			
