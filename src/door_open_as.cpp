@@ -67,7 +67,8 @@
 
 #include <segbot_arm_manipulation/arm_utils.h>
 #include <segbot_arm_manipulation/grasp_utils.h>
-#include "agile_grasp/Grasps.h"
+#include <agile_grasp/Grasps.h>
+#include <door_manipulation_demo/PushDoorAction.h>
 
 #define NUM_JOINTS 8
 #define HAND_OFFSET_GRASP -0.02
@@ -95,22 +96,56 @@ bool g_caught_sigint = false;
 ros::Publisher first_goal_pub;
 ros::Publisher second_goal_pub;
 
-/* what happens when ctr-c is pressed */
-/*
-public:
+using namespace std;
 
-  TabletopGraspActionServer(std::string name) :
-	as_(nh_, name, boost::bind(&TabletopGraspActionServer::executeCB, this, _1), false),
+class DoorOpen
+{
+protected:
+
+	ros::NodeHandle nh_;
+  
+  actionlib::SimpleActionServer<door_manipulation_demo::PushDoorAction> as_; 
+  
+  std::string action_name_;
+  
+  segbot_arm_manipulation::LiftVerifyFeedback feedback_;
+  segbot_arm_manipulation::LiftVerifyResult result_;
+  ros::Subscriber sub_angles;
+  ros::Subscriber goal_sub;
+  ros::Subscriber plane_coeff_sub;
+  ros::Subscriber sub_tool;
+  ros::ServiceClient client ;
+  ros::ServiceClient client_move;
+  
+ public:
+
+	DoorOpen(std::string name) :
+    as_(nh_, name, boost::bind(&DoorOpen::executeCB, this, _1), false),
     action_name_(name)
-    as_.start();
-  }
+  { 
+	
+		//create subscriber to joint angles
+		sub_angles = n.subscribe ("/joint_states", 1, joint_state_cb);
+		
+		//subsrcibe to goals
+		goal_sub = n.subscribe ("/goal_to_go", 1,goal_cb);
 
-  ~TabletopGraspActionServer(void)
+		plane_coeff_sub = n.subscribe ("/plane_coeff", 1,plane_coeff_cb);
+		
+		//create subscriber to tool position topic
+		sub_tool = n.subscribe("/mico_arm_driver/out/tool_position", 1, toolpos_cb);
+		
+		//service
+		
+		client = n.serviceClient<door_manipulation_demo::door_perception>("/door_handle_detection/door_perception");
+		
+		client_move = n.serviceClient<moveit_utils::MicoMoveitCartesianPose>("mico_cartesianpose_service");
+ }
+ 
+   ~DoorOpen(void)
   {
   }
-*/
-
-
+  
 bool similar(float x1, float x2){
 	if(x1 - .05 < x2 && x2 < x1 +.05){
 		return true;
@@ -118,23 +153,7 @@ bool similar(float x1, float x2){
 	return false;
 }	
 
-/*
-void grasps_cb(const agile_grasp::Grasps &msg){
-		ROS_INFO("Heard grasps!");
-		current_grasps = msg;
-		heardGrasps = true;
-}*/
-
-/*struct GraspCartesianCommand {
-	sensor_msgs::JointState approach_q;
-	geometry_msgs::PoseStamped approach_pose;
-	
-	sensor_msgs::JointState grasp_q;
-	geometry_msgs::PoseStamped grasp_pose;
-	
-	
-};*/
-
+/* what happens when ctr-c is pressed */
 void sig_handler(int sig)
 {
   g_caught_sigint = true;
@@ -232,52 +251,13 @@ void goal_cb_2 (const geometry_msgs::PoseStampedConstPtr& input)
 		second_goal.pose = input->pose; 
 }*/
 
-int main (int argc, char** argv)
-{
-	
+void executeCB(const door_manipulation_demo::LiftVerifyGoalConstPtr  &goal){
 	// Initialize ROS
-	ros::init (argc, argv, "segbot_arm_door_open_detector");
-	ros::NodeHandle n;
-	tf::TransformListener listener;
-	//tested to be you of way of xtion camera for starting pose
-	start_pose.header.frame_id = "mico_link_base";
-	start_pose.pose.position.x = 0.161036163568;
-	start_pose.pose.position.y = -0.37887275219;
-	start_pose.pose.position.z = 0.242402374744;
-	start_pose.pose.orientation.x = 0.419507177788;
-	start_pose.pose.orientation.y = 0.365710866911;
-	start_pose.pose.orientation.z = 0.458010463645;
-	start_pose.pose.orientation.w = 0.693177974837;
-	
-	first_goal_pub = n.advertise<geometry_msgs::PoseStamped>("goal_picked", 1);
-	second_goal_pub = n.advertise<geometry_msgs::PoseStamped>("goal_picked_second", 1);
-	
-	//subscriber for grasps
-	//ros::Subscriber sub_grasps = n.subscribe("/find_grasps/grasps_handles",1, &TabletopGraspActionServer::grasps_cb,this);  
-	
-	//create subscriber to joint angles
-	ros::Subscriber sub_angles = n.subscribe ("/joint_states", 1, joint_state_cb);
-	
-	//subsrcibe to goals
-	ros::Subscriber goal_sub = n.subscribe ("/goal_to_go", 1,goal_cb);
-
-	ros::Subscriber plane_coeff_sub = n.subscribe ("/plane_coeff", 1,plane_coeff_cb);
-	
-	//create subscriber to tool position topic
-	ros::Subscriber sub_tool = n.subscribe("/mico_arm_driver/out/tool_position", 1, toolpos_cb);
-	
-	//service
-	
-	ros::ServiceClient client = n.serviceClient<door_manipulation_demo::door_perception>("/door_handle_detection/door_perception");
-	
-	ros::ServiceClient client_move = n.serviceClient<moveit_utils::MicoMoveitCartesianPose>("mico_cartesianpose_service");
-	
-	
 	signal(SIGINT, sig_handler);
 	orig_plane_coeff = plane_coeff; 
 	
 	//get arm position
-	//segbot_arm_manipulation::closeHand();
+	segbot_arm_manipulation::closeHand();
 	//listenForArmData(30.0);
 	//joint_state_outofview = current_state;
 	
@@ -304,90 +284,38 @@ int main (int argc, char** argv)
 	poses_msg_first.header.frame_id = "mico_api_origin";
 	int changex1 = 0;
 	int changey1 = 0;
-	
-	//potential_approach = first_goal.pose;
-	ROS_INFO("passed .5");
-	for(int changex = 0; changex < 3; changex++){
-		int occurances = 0;
-		for(int changey = 0; changey < 3; changey++){
-			geometry_msgs::Pose potential_approach;
-			potential_approach = first_goal.pose;
-			ROS_INFO("passed .5");
-			potential_approach.position.x += .05;
-			potential_approach.position.y += .05;
+	geometry_msgs::Pose potential_approach;
+	potential_approach = first_goal.pose;
+	while(changex1 < .2){
+		while( changey1 < .2){
+			potential_approach.position.x += changex1;
+			potential_approach.position.y += changey1;
 			poses_msg_first.poses.push_back(potential_approach);
-			//changey1 += .05;
-			occurances++;
-			ROS_INFO("occured %d", occurances);
+			changey1 += .05;
 		}	
-		//changex1 += .05;
+		changex1 += .05;
 	}
-			ROS_INFO("passed 1");
 	//make array of poses for the second goal
 	geometry_msgs::PoseArray poses_msg_2nd;
 	poses_msg_first.header.seq = 1;
 	poses_msg_first.header.stamp = second_goal.header.stamp;
 	poses_msg_first.header.frame_id = "mico_api_origin";
-	
+	geometry_msgs::Pose push_point;
+	push_point = second_goal.pose;
 	int changex2 = 0;
 	int changey2 = 0;
-	while(changex2 < 3){
-		while( changey2 < .3){
-			geometry_msgs::Pose push_point;
-		push_point = second_goal.pose;
-			push_point.position.x += .05;
-			push_point.position.y += .05;
+	while(changex2 < .2){
+		while( changey2 < .2){
+			push_point.position.x += changex2;
+			push_point.position.y += changey2;
 			poses_msg_first.poses.push_back(push_point);
-			changey2 ++;
+			changey2 += .05;
 		}	
-		changex2 ++;
+		changex2 += .05;
 	}
 	int i = 0;
-			ROS_INFO("passed 2");
-	//bool isReachable = false;
+	bool isReachable = false;
 	//pick points to publish at
-	/*
-	std::vector<geometry_msgs::PoseStamped> pose1;
-	std::vector<geometry_msgs::PoseStamped> pose2;
-	while( !isReachable & i < sizeof(poses_msg_first.poses)){
-		geometry_msgs::PoseStamped temp;
-		temp.header = first_goal.header;
-		temp.pose = poses_msg_first.poses.at(i);
-			moveit_msgs::GetPositionIK::Response  ik_response_approach = computeIK(n,temp);
-			if(ik_response_approach.error_code.val == 1){
-				moveit_msgs::GetPositionIK::Response  ik_response_grasp = segbot_arm_manipulation::computeIK(n_,gc_i.grasp_pose);
-				if(ik_response_approach.error_code.val == 1){
-					ROS_INFO("entered first pose passed");
-					first_goal_pub.publish(poses_msg_first.poses.at(i));
-					first_goal.pose = poses_msg_first.poses.at(i);
-					pose1.push_back(first_goal);
-					int j = 0;
-					while( !isReachable & i < sizeof(poses_msg_2nd.poses)){
-						geometry_msgs::PoseStamped temp2;
-						temp2.header = first_goal.header;
-						temp2.pose = poses_msg_2nd.poses.at(j);
-						moveit_msgs::GetPositionIK::Response  ik_response_approach = computeIK(n,temp2);
-						if(ik_response_approach.error_code.val == 1){
-							
-							//std::vector<double> D = segbot_arm_manipulation::getJointAngleDifferences(ik_response_approach.solution.joint_state, ik_response_grasp.solution.joint_state);
-							//double sum_d = 0;
-							//for (int p = 0; p < D.size(); p++){
-								//sum_d += D[p];
-							//}
-							
-							ROS_INFO("entered second pose passed");
-							second_goal_pub.publish(poses_msg_2nd.poses.at(j));
-							second_goal.pose = poses_msg_2nd.poses.at(j);
-							pose2.push_back(second_goal);
-							isReachable = true;
-						}	
-						j++;
-					}
-				}	
-			}	
-			i++;
-	}	
-	*/
 	//here, we'll store all grasp options that pass the filters
 			std::vector<geometry_msgs::PoseStamped> push_commands;
 			
@@ -424,7 +352,7 @@ int main (int argc, char** argv)
 					}
 				
 			}
-					ROS_INFO("passed 3");
+			
 			//check to see if all potential grasps have been filtered out
 			if (push_commands.size() == 0){
 				ROS_WARN("[segbot_tabletop_grasp_as.cpp] No feasible grasps found demo done.");
@@ -453,56 +381,8 @@ int main (int argc, char** argv)
 						//as_.setAborted(result_);
 						
 					} else {
-								ROS_INFO("passed 4");
+						
 						first_goal = push_commands.at(selected_grasp_index); 
-						//	GraspCartesianCommand gc_i = segbot_arm_manipulation::grasp_utils::constructGraspCommand(current_grasps.grasps.at(i),HAND_OFFSET_APPROACH,HAND_OFFSET_GRASP, sensor_frame_id);
-					
-					//if(heardGoal){
-					/* //just get first poitns that works doeesn't check for anything else
-						//may not need used for robustness
-						//checks to see if can reach both poses though inverse kinematics
-						int changex1 = 0;
-						int changey1 = 0;
-						int changex2 = 0;
-						int changey2 = 0;
-						bool isReachable = false;
-						while( changex1 < .2 && !isReachable){
-							first_goal.pose.position.x += .05;
-							
-							while( changey1 < .2 && !isReachable){
-								first_goal.pose.position.y += .05;
-								moveit_msgs::GetPositionIK::Response  ik_response_approach = computeIK(n,first_goal);
-								
-								if(ik_response_approach.error_code.val == 1){
-									ROS_INFO("entered first pose passed");
-									first_goal_pub.publish(first_goal);
-									
-									while( changex2 < .2 && !isReachable){
-										second_goal.pose.position.x += .05;
-										
-										while( changey2 < .2 && !isReachable){
-											second_goal.pose.position.y += .05;
-											moveit_msgs::GetPositionIK::Response  ik_response_approach = computeIK(n,first_goal);
-											if(ik_response_approach.error_code.val == 1){
-												first_goal_pub.publish(first_goal);
-												second_goal_pub.publish(second_goal);
-												ROS_INFO("entered second pose passed");
-												isReachable = true;
-											}	
-											changey2 += .05;
-										}		
-										
-									changex2 += .05;
-									}
-									
-								}	
-								
-								changey1 += .05;
-							}	
-							changex1 += .05;
-						}	
-						*/
-						//if(isReachable = true){	
 							pressEnter();
 							ROS_INFO("goal picked...check if pose is what you want in rviz if not ctr c.");
 							//segbot_arm_manipulation::moveToPoseMoveIt(n,first_goal);
@@ -538,8 +418,6 @@ int main (int argc, char** argv)
 							ros::spinOnce();  
 							pressEnter();
 							ROS_INFO("Demo ending...arm will move back 'ready' position .");
-							//segbot_arm_manipulation::moveToJointState(n,joint_state_outofview);
-							//segbot_arm_manipulation::moveToPoseMoveIt(n,start_pose);
 							segbot_arm_manipulation::homeArm(n);
 							if(client.call(door_srv)){
 							ros::spinOnce();
@@ -550,18 +428,26 @@ int main (int argc, char** argv)
 							}
 							if(similar(orig_plane_coeff.x, plane_coeff.x) && similar(orig_plane_coeff.y, plane_coeff.y) && similar(orig_plane_coeff.z, plane_coeff.z)
 								&& similar(orig_plane_coeff.w, plane_coeff.w)){
-									ROS_INFO("didn't move door");
+									as_.setPreempted();
+									result_.success = false;
+									as_.setSucceeded(result_);
 							} else {
 									ROS_INFO("moved door");
+									as_.setPreempted();
+									result_.success = true;
+									as_.setSucceeded(result_);
 							}	
-							//refresh rate
-							//double ros_rate = 3.0;
-							//ros::Rate r(ros_rate);
+							
 					}		
-					//} else {
-					
-						//ROS_INFO("Demo ending...didn't find an approac point .");
-					//}	
+}	
+
+int main (int argc, char** argv)
+{
 	
-			}
+  ros::init(argc, argv, "door_open_as");
+
+  DoorOpen as(ros::this_node::getName());
+  ros::spin();
+
+  return 0;
 };
