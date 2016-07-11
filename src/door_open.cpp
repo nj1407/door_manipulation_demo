@@ -207,7 +207,7 @@ void goal_cb (const geometry_msgs::PoseStampedConstPtr& input)
 		first_goal.pose = input->pose; 
 		second_goal.header = input->header;
 		second_goal.pose = input->pose;
-		second_goal.pose.position.x += .1;
+		second_goal.pose.position.x += .15;
 		heardGoal = true;
 		
 }
@@ -241,13 +241,13 @@ int main (int argc, char** argv)
 	tf::TransformListener listener;
 	//tested to be you of way of xtion camera for starting pose
 	start_pose.header.frame_id = "mico_link_base";
-	start_pose.pose.position.x = 0.161036163568;
-	start_pose.pose.position.y = -0.37887275219;
-	start_pose.pose.position.z = 0.242402374744;
-	start_pose.pose.orientation.x = 0.419507177788;
-	start_pose.pose.orientation.y = 0.365710866911;
-	start_pose.pose.orientation.z = 0.458010463645;
-	start_pose.pose.orientation.w = 0.693177974837;
+    start_pose.pose.position.x = 0.2531;
+    start_pose.pose.position.y = -0.24;
+    start_pose.pose.position.z = 0.31;
+    start_pose.pose.orientation.x = 0.6048;
+    start_pose.pose.orientation.y = 0.466;
+    start_pose.pose.orientation.z = 0.424;
+    start_pose.pose.orientation.w = 0.485;
 	
 	first_goal_pub = n.advertise<geometry_msgs::PoseStamped>("goal_picked", 1);
 	second_goal_pub = n.advertise<geometry_msgs::PoseStamped>("goal_picked_second", 1);
