@@ -575,10 +575,6 @@ int main (int argc, char** argv)
 							//double ros_rate = 3.0;
 							//ros::Rate r(ros_rate);
 					}		
-					//} else {
-					
-						//ROS_INFO("Demo ending...didn't find an approac point .");
-					//}	
 	
 			}
 };

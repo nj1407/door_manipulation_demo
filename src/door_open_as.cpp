@@ -267,6 +267,17 @@ protected:
 		// Initialize ROS
 		signal(SIGINT, sig_handler);
 		orig_plane_coeff = plane_coeff; 
+		tf::TransformListener listener;
+		
+		//tested to be you of way of xtion camera for starting pose
+		start_pose.header.frame_id = "mico_link_base";
+		start_pose.pose.position.x = 0.2531;
+		start_pose.pose.position.y = -0.24;
+		start_pose.pose.position.z = 0.31;
+		start_pose.pose.orientation.x = 0.6048;
+		start_pose.pose.orientation.y = 0.466;
+		start_pose.pose.orientation.z = 0.424;
+		start_pose.pose.orientation.w = 0.485;
 		
 		//get arm position
 		segbot_arm_manipulation::closeHand();
@@ -278,7 +289,7 @@ protected:
 		moveit_utils::MicoMoveitCartesianPose mico_srv;
 		mico_srv.request.target = first_goal;
 		
-
+		segbot_arm_manipulation::moveToPoseMoveIt(nh_,start_pose);
 		//make calls to get vision
 		if(client.call(door_srv)){
 			ros::spinOnce();
@@ -376,6 +387,9 @@ protected:
 				//check to see if all potential grasps have been filtered out
 				if (push_commands.size() == 0){
 					ROS_WARN("[segbot_tabletop_grasp_as.cpp] No feasible grasps found demo done.");
+					as_.setPreempted();
+					result_.success = false;
+					as_.setSucceeded(result_);	
 			
 				} else{
 						
@@ -399,6 +413,9 @@ protected:
 						if (selected_grasp_index == -1){
 							ROS_WARN("selection failed. kill.");
 							//as_.setAborted(result_);
+							as_.setPreempted();
+							result_.success = false;
+							as_.setSucceeded(result_);
 							
 						} else {
 							
@@ -414,8 +431,8 @@ protected:
 								pressEnter();
 								
 								ROS_INFO("Demo starting...Move the arm to a 'ready' position .");
-								segbot_arm_manipulation::homeArm(nh_);
-								//segbot_arm_manipulation::moveToPoseMoveIt(n,start_pose);
+								//segbot_arm_manipulation::homeArm(nh_);
+								
 								
 								ros::spinOnce();
 								
@@ -475,7 +492,7 @@ protected:
 										as_.setSucceeded(result_);
 								}	
 								
-						}		
+						}	
 				}	
 		}
 };
