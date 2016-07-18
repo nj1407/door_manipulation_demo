@@ -253,16 +253,6 @@ protected:
 		}
 	}
 
-	
-	//get the second goal *may not be nesscecary
-	/*
-	void goal_cb_2 (const geometry_msgs::PoseStampedConstPtr& input)
-	{
-			ROS_INFO("entered goal_cb2");
-			second_goal.header = input->header;
-			second_goal.pose = input->pose; 
-	}*/
-
 	void executeCB(const door_manipulation_demo::PushDoorGoalConstPtr  &goal){
 		// Initialize ROS
 		ROS_INFO("entered");
