@@ -265,6 +265,7 @@ protected:
 
 	void executeCB(const door_manipulation_demo::PushDoorGoalConstPtr  &goal){
 		// Initialize ROS
+		ROS_INFO("entered");
 		signal(SIGINT, sig_handler);
 		orig_plane_coeff = plane_coeff; 
 		tf::TransformListener listener;
@@ -289,14 +290,14 @@ protected:
 		moveit_utils::MicoMoveitCartesianPose mico_srv;
 		mico_srv.request.target = first_goal;
 		
-		segbot_arm_manipulation::moveToPoseMoveIt(nh_,start_pose);
+		//segbot_arm_manipulation::moveToPoseMoveIt(nh_,start_pose);
 		//make calls to get vision
 		if(client.call(door_srv)){
 			ros::spinOnce();
-			//if(client.call(door_srv)){
+			if(client.call(door_srv)){
 				ROS_INFO("entered");
-				//ros::spinOnce();
-			//}	
+				ros::spinOnce();
+			}	
 		} else {
 			ROS_INFO("didn't enter vision");
 		}

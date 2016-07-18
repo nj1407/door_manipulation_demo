@@ -207,7 +207,9 @@ void goal_cb (const geometry_msgs::PoseStampedConstPtr& input)
 		first_goal.pose = input->pose; 
 		second_goal.header = input->header;
 		second_goal.pose = input->pose;
-		second_goal.pose.position.x += .15;
+		second_goal.pose.position.x += .1;
+		first_goal_pub.publish(first_goal);
+		second_goal_pub.publish(second_goal);
 		heardGoal = true;
 		
 }
@@ -250,7 +252,7 @@ int main (int argc, char** argv)
     start_pose.pose.orientation.w = 0.485;
 	
 	first_goal_pub = n.advertise<geometry_msgs::PoseStamped>("goal_picked", 1);
-	second_goal_pub = n.advertise<geometry_msgs::PoseStamped>("goal_picked_second", 1);
+	second_goal_pub = n.advertise<geometry_msgs::PoseStamped>("goal_to_go_2", 1);
 	
 	//subscriber for grasps
 	//ros::Subscriber sub_grasps = n.subscribe("/find_grasps/grasps_handles",1, &TabletopGraspActionServer::grasps_cb,this);  
@@ -304,7 +306,7 @@ int main (int argc, char** argv)
 	poses_msg_first.header.frame_id = "mico_api_origin";
 	int changex1 = 0;
 	int changey1 = 0;
-	
+	poses_msg_first.poses.push_back(first_goal.pose);
 	//potential_approach = first_goal.pose;
 	ROS_INFO("passed .5");
 	for(int changex = 0; changex < 10; changex++){
@@ -313,7 +315,7 @@ int main (int argc, char** argv)
 			geometry_msgs::Pose potential_approach;
 			potential_approach = first_goal.pose;
 			ROS_INFO("passed .5");
-			potential_approach.position.x += .05;
+			//potential_approach.position.z += .05;
 			potential_approach.position.y += .05;
 			poses_msg_first.poses.push_back(potential_approach);
 			//changey1 += .05;
@@ -328,14 +330,14 @@ int main (int argc, char** argv)
 	poses_msg_first.header.seq = 1;
 	poses_msg_first.header.stamp = second_goal.header.stamp;
 	poses_msg_first.header.frame_id = "mico_api_origin";
-	
+	poses_msg_first.poses.push_back(second_goal.pose);
 	int changex = 0;
 	int changey = 0;
 	while(changex < 10){
 		while( changey < 10){
 			geometry_msgs::Pose push_point;
 		push_point = second_goal.pose;
-			push_point.position.x += .05;
+			//push_point.position.z += .05;
 			push_point.position.y += .05;
 			poses_msg_first.poses.push_back(push_point);
 			changey ++;
@@ -514,7 +516,7 @@ int main (int argc, char** argv)
 							pressEnter();
 							
 							ROS_INFO("Demo starting...Move the arm to a 'ready' position .");
-							segbot_arm_manipulation::homeArm(n);
+							//segbot_arm_manipulation::homeArm(n);
 							//segbot_arm_manipulation::moveToPoseMoveIt(n,start_pose);
 							
 							ros::spinOnce();
@@ -527,10 +529,12 @@ int main (int argc, char** argv)
 							ros::spinOnce();                                            
 							segbot_arm_manipulation::moveToPoseMoveIt(n,first_goal);
 							ros::spinOnce(); 
+							segbot_arm_manipulation::moveToPoseMoveIt(n,first_goal);
+							ros::spinOnce(); 
 							//ros::spinOnce();
 							bool isReachable = false;
 							while( changex1 < 3 && !isReachable){
-								second_goal.pose.position.x += .05;
+								second_goal.pose.position.x -= .05;
 								
 								while( changey1 < 3 && !isReachable){
 									second_goal.pose.position.y += .05;
