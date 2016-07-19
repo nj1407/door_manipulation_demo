@@ -321,14 +321,14 @@ int main (int argc, char** argv)
 	poses_msg_first.poses.push_back(first_goal.pose);
 	//potential_approach = first_goal.pose;
 	ROS_INFO("passed .5");
-	for(int changex = 0; changex < 50; changex++){
+	for(int changex = 0; changex < 20; changex++){
 		int occurances = 0;
-		for(int changey = 0; changey < 50; changey++){
+		for(int changey = 0; changey < 20; changey++){
 			geometry_msgs::Pose potential_approach;
 			potential_approach = first_goal.pose;
 			ROS_INFO("passed .5");
-			potential_approach.position.z -= .01;
-			potential_approach.position.y += .01;
+			potential_approach.position.z -= .025;
+			potential_approach.position.y += .025;
 			poses_msg_first.poses.push_back(potential_approach);
 			//changey1 += .05;
 			occurances++;
@@ -345,12 +345,12 @@ int main (int argc, char** argv)
 	poses_msg_first.poses.push_back(second_goal.pose);
 	int changez = 0;
 	int changey = 0;
-	while(changez < 50){
-		while( changey < 50){
+	while(changez < 20){
+		while( changey < 20){
 			geometry_msgs::Pose push_point;
 		push_point = second_goal.pose;
-			push_point.position.z -= .01;
-			push_point.position.y += .01;
+			push_point.position.z -= .025;
+			push_point.position.y += .025;
 			poses_msg_first.poses.push_back(push_point);
 			changey++;
 		}	
@@ -487,6 +487,8 @@ int main (int argc, char** argv)
 							pressEnter();
 							segbot_arm_manipulation::moveToPoseMoveIt(n,second_goal);
 							ros::spinOnce();                 
+							segbot_arm_manipulation::moveToPoseMoveIt(n,second_goal);
+							ros::spinOnce();  
 							segbot_arm_manipulation::moveToPoseMoveIt(n,second_goal);
 							ros::spinOnce();  
 							pressEnter();
