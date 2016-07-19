@@ -23,6 +23,9 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
+#include <cstdlib>
+#include <ctime>
+#include <iostream>
 
 // PCL specific includes
 #include <pcl/conversions.h>
@@ -59,6 +62,7 @@
 #include <moveit_utils/AngularVelCtrl.h>
 #include <moveit_utils/MicoMoveitJointPose.h>
 #include <moveit_utils/MicoMoveitCartesianPose.h>
+//#include <controller_manager.h>
 
 #include <geometry_msgs/TwistStamped.h>
 #include <std_msgs/Header.h>
@@ -208,8 +212,8 @@ void goal_cb (const geometry_msgs::PoseStampedConstPtr& input)
 		second_goal.header = input->header;
 		second_goal.pose = input->pose;
 		second_goal.pose.position.x += .1;
-		first_goal_pub.publish(first_goal);
-		second_goal_pub.publish(second_goal);
+	//	first_goal_pub.publish(first_goal);
+	//	second_goal_pub.publish(second_goal);
 		heardGoal = true;
 		
 }
@@ -276,7 +280,7 @@ int main (int argc, char** argv)
 	
 	
 	signal(SIGINT, sig_handler);
-	orig_plane_coeff = plane_coeff; 
+	
 	
 	//get arm position
 	segbot_arm_manipulation::closeHand();
@@ -306,6 +310,7 @@ int main (int argc, char** argv)
 	} else {
 		ROS_INFO("didn't enter vision");
 	}
+	orig_plane_coeff = plane_coeff; 
 	//make an array of poses for first goal		
 	geometry_msgs::PoseArray poses_msg_first;
 	poses_msg_first.header.seq = 1;
@@ -316,14 +321,14 @@ int main (int argc, char** argv)
 	poses_msg_first.poses.push_back(first_goal.pose);
 	//potential_approach = first_goal.pose;
 	ROS_INFO("passed .5");
-	for(int changex = 0; changex < 10; changex++){
+	for(int changex = 0; changex < 50; changex++){
 		int occurances = 0;
-		for(int changey = 0; changey < 10; changey++){
+		for(int changey = 0; changey < 50; changey++){
 			geometry_msgs::Pose potential_approach;
 			potential_approach = first_goal.pose;
 			ROS_INFO("passed .5");
-			potential_approach.position.z -= .05;
-			potential_approach.position.y += .05;
+			potential_approach.position.z -= .01;
+			potential_approach.position.y += .01;
 			poses_msg_first.poses.push_back(potential_approach);
 			//changey1 += .05;
 			occurances++;
@@ -340,12 +345,12 @@ int main (int argc, char** argv)
 	poses_msg_first.poses.push_back(second_goal.pose);
 	int changez = 0;
 	int changey = 0;
-	while(changez < 10){
-		while( changey < 10){
+	while(changez < 50){
+		while( changey < 50){
 			geometry_msgs::Pose push_point;
 		push_point = second_goal.pose;
-			push_point.position.z -= .05;
-			push_point.position.y += .05;
+			push_point.position.z -= .01;
+			push_point.position.y += .01;
 			poses_msg_first.poses.push_back(push_point);
 			changey++;
 		}	
@@ -397,9 +402,10 @@ int main (int argc, char** argv)
 			} else{
 					
 					//listenForArmData(30.0);
-			
+				
 					int selected_grasp_index = -1;
-			
+					//pick random
+					//selected_grasp_index =  rand() % push_commands.size(); 
 			
 						//find the grasp with closest orientatino to current pose
 						double min_diff = 1000000.0;
@@ -413,8 +419,10 @@ int main (int argc, char** argv)
 								ROS_INFO("picked orientation");
 							}
 						}
-								
-					if (selected_grasp_index == -1){
+							
+					
+							
+					if (selected_grasp_index == -1 || selected_grasp_index > push_commands.size()){
 						ROS_WARN("selection failed. kill.");
 						//as_.setAborted(result_);
 						
@@ -445,6 +453,7 @@ int main (int argc, char** argv)
 							
 							ros::spinOnce();                                            
 							segbot_arm_manipulation::moveToPoseMoveIt(n,first_goal);
+							//moveit_controller_manager::(const ros::Duration & timeout = ros::Duration(20))
 							ros::spinOnce(); 
 							segbot_arm_manipulation::moveToPoseMoveIt(n,first_goal);
 							ros::spinOnce(); 
@@ -456,11 +465,11 @@ int main (int argc, char** argv)
 										second_goal_pub.publish(second_goal);
 										isReachable = true;
 							} else{	
-								while( changex1 < 3 && !isReachable){
-									second_goal.pose.position.z -= .05;
+								while( changex1 < 15 && !isReachable){
+									second_goal.pose.position.z -= .01;
 									
-									while( changey1 < 3 && !isReachable){
-										second_goal.pose.position.y += .05;
+									while( changey1 < 15 && !isReachable){
+										second_goal.pose.position.y += .01;
 										moveit_msgs::GetPositionIK::Response  ik_response_approach = computeIK(n,second_goal);
 										
 										if(ik_response_approach.error_code.val == 1){

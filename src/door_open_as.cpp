@@ -59,12 +59,10 @@
 #include <moveit_utils/AngularVelCtrl.h>
 #include <moveit_utils/MicoMoveitJointPose.h>
 #include <moveit_utils/MicoMoveitCartesianPose.h>
-
 #include <geometry_msgs/TwistStamped.h>
 #include <std_msgs/Header.h>
 #include <time.h>
 #include <stdint.h>
-
 #include <segbot_arm_manipulation/arm_utils.h>
 #include <segbot_arm_manipulation/grasp_utils.h>
 #include <agile_grasp/Grasps.h>
