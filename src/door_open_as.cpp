@@ -72,7 +72,7 @@
 #define NUM_JOINTS 8
 #define HAND_OFFSET_GRASP -0.02
 #define HAND_OFFSET_APPROACH -0.13
-#define ANGULAR_DIFF_THRESHOLD 3.0
+#define ANGULAR_DIFF_THRESHOLD 20.0
 
 Eigen::Vector4f centroid;
 
@@ -179,7 +179,7 @@ void goal_cb (const geometry_msgs::PoseStampedConstPtr& input)
 }
 void toolpos_cb (const geometry_msgs::PoseStampedConstPtr& input)
 {
-		ROS_INFO("entered toolposecb");
+		//ROS_INFO("entered toolposecb");
 		current_pose.header = input->header;
 		current_pose.pose = input->pose;
 		
@@ -348,13 +348,13 @@ protected:
 		for(int changey = 0; changey < 20; changey++){
 			geometry_msgs::Pose potential_approach;
 			potential_approach = first_goal.pose;
-			ROS_INFO("passed .5");
+			//ROS_INFO("passed .5");
 			potential_approach.position.z -= .025;
 			potential_approach.position.y += .025;
 			poses_msg_first.poses.push_back(potential_approach);
 			//changey1 += .05;
 			occurances++;
-			ROS_INFO("occured %d", occurances);
+			//ROS_INFO("occured %d", occurances);
 		}	
 		//changex1 += .05;
 	}
@@ -419,7 +419,7 @@ protected:
 					ROS_INFO("passed 3");
 			//check to see if all potential grasps have been filtered out
 			if (push_commands.size() == 0){
-				ROS_WARN("[segbot_tabletop_grasp_as.cpp] No feasible grasps found demo done.");
+				ROS_INFO("No feasible poses found demo done.");
 		
 			} else{
 							
@@ -447,6 +447,9 @@ protected:
 					if (selected_grasp_index == -1 || selected_grasp_index > push_commands.size()){
 						ROS_WARN("selection failed. kill.");
 						//as_.setAborted(result_);
+						as_.setPreempted();
+						result_.success = false;
+						as_.setSucceeded(result_);
 						
 					} else {
 								ROS_INFO("passed 4");
