@@ -209,9 +209,10 @@ void goal_cb (const geometry_msgs::PoseStampedConstPtr& input)
 		ROS_INFO("entered goal_cb");
 		first_goal.header = input->header;
 		first_goal.pose = input->pose; 
+		first_goal.pose.position.x -= .05;
 		second_goal.header = input->header;
 		second_goal.pose = input->pose;
-		second_goal.pose.position.x += .1;
+		second_goal.pose.position.x += .15;
 	//	first_goal_pub.publish(first_goal);
 	//	second_goal_pub.publish(second_goal);
 		heardGoal = true;
