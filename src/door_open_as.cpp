@@ -484,7 +484,7 @@ protected:
 							ros::spinOnce(); 
 							//ros::spinOnce();
 							bool isReachable = false;
-							moveit_msgs::GetPositionIK::Response  ik_response_approach = computeIK(nh_,second_goal);
+							/*moveit_msgs::GetPositionIK::Response  ik_response_approach = computeIK(nh_,second_goal);
 							if(ik_response_approach.error_code.val == 1){
 										ROS_INFO("entered first pose passed");
 										second_goal_pub.publish(second_goal);
@@ -516,7 +516,27 @@ protected:
 							ros::spinOnce();  
 							segbot_arm_manipulation::moveToPoseMoveIt(nh_,second_goal);
 							ros::spinOnce();  
-							pressEnter();
+							pressEnter();*/
+							double timeoutSeconds = 1.85;
+							int rateHertz = 100;
+							geometry_msgs::TwistStamped velocityMsg;
+							
+							ros::Rate r(rateHertz);
+							for(int i = 0; i < (int)timeoutSeconds * rateHertz; i++) {
+								
+								velocityMsg.twist.linear.x = 1.25;
+								velocityMsg.twist.linear.y = 0.0;
+								velocityMsg.twist.linear.z = 0.0;
+								
+								velocityMsg.twist.angular.x = 0.0;
+								velocityMsg.twist.angular.y = 0.0;
+								velocityMsg.twist.angular.z = 0.0;
+								
+								
+								pub_velocity.publish(velocityMsg);
+								
+								r.sleep();
+							}
 							ROS_INFO("Demo ending...arm will move back 'ready' position .");
 							//segbot_arm_manipulation::moveToJointState(n,joint_state_outofview);
 							//segbot_arm_manipulation::moveToPoseMoveIt(n,start_pose);
