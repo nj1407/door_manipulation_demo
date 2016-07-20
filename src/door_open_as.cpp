@@ -68,6 +68,7 @@
 #include <agile_grasp/Grasps.h>
 #include <door_manipulation_demo/PushDoorAction.h>
 #include <actionlib/server/simple_action_server.h>
+#include <geometry_msgs/TwistStamped.h>
 
 #define NUM_JOINTS 8
 #define HAND_OFFSET_GRASP -0.02
@@ -94,7 +95,7 @@ bool g_caught_sigint = false;
 
 ros::Publisher first_goal_pub;
 ros::Publisher second_goal_pub;
-
+ros::Publisher pub_velocity;
 
 //declare subscribers
 
@@ -226,6 +227,9 @@ protected:
 		//create subscriber to tool position topic
 		sub_tool = nh_.subscribe("/mico_arm_driver/out/tool_position", 1, toolpos_cb);
 		
+		//publish velocities
+		pub_velocity = nh_.advertise<geometry_msgs::TwistStamped>("/mico_arm_driver/in/cartesian_velocity", 10);
+		
 		//service
 		
 		client = nh_.serviceClient<door_manipulation_demo::door_perception>("/door_handle_detection/door_perception");
@@ -349,8 +353,8 @@ protected:
 			geometry_msgs::Pose potential_approach;
 			potential_approach = first_goal.pose;
 			//ROS_INFO("passed .5");
-			potential_approach.position.z -= .025;
-			potential_approach.position.y += .025;
+			potential_approach.position.z -= .03;
+			potential_approach.position.y += .03;
 			poses_msg_first.poses.push_back(potential_approach);
 			//changey1 += .05;
 			occurances++;
@@ -484,7 +488,7 @@ protected:
 							ros::spinOnce(); 
 							//ros::spinOnce();
 							bool isReachable = false;
-							/*moveit_msgs::GetPositionIK::Response  ik_response_approach = computeIK(nh_,second_goal);
+							moveit_msgs::GetPositionIK::Response  ik_response_approach = computeIK(nh_,second_goal);
 							if(ik_response_approach.error_code.val == 1){
 										ROS_INFO("entered first pose passed");
 										second_goal_pub.publish(second_goal);
@@ -516,8 +520,9 @@ protected:
 							ros::spinOnce();  
 							segbot_arm_manipulation::moveToPoseMoveIt(nh_,second_goal);
 							ros::spinOnce();  
-							pressEnter();*/
-							double timeoutSeconds = 1.85;
+							pressEnter();
+							/*
+							double timeoutSeconds = 3.85;
 							int rateHertz = 100;
 							geometry_msgs::TwistStamped velocityMsg;
 							
@@ -536,7 +541,7 @@ protected:
 								pub_velocity.publish(velocityMsg);
 								
 								r.sleep();
-							}
+							}*/
 							ROS_INFO("Demo ending...arm will move back 'ready' position .");
 							//segbot_arm_manipulation::moveToJointState(n,joint_state_outofview);
 							//segbot_arm_manipulation::moveToPoseMoveIt(n,start_pose);
@@ -549,6 +554,7 @@ protected:
 								}
 								if(similar(orig_plane_coeff.x, plane_coeff.x) && similar(orig_plane_coeff.y, plane_coeff.y) && similar(orig_plane_coeff.z, plane_coeff.z)
 									&& similar(orig_plane_coeff.w, plane_coeff.w)){
+										ROS_INFO("didn't move  door");
 										as_.setPreempted();
 										result_.success = false;
 										as_.setSucceeded(result_);
