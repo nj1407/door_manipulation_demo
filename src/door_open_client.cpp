@@ -47,11 +47,5 @@ int main(int argc, char **argv) {
 
 	ROS_INFO(" push door action	 finished.");
 
-	if(ac.getResult()){
-		ROS_INFO("door moved.");
-	}else{
-		ROS_WARN("door didn't move");
-	}
-
 }
 

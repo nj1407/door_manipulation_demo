@@ -555,14 +555,16 @@ protected:
 								if(similar(orig_plane_coeff.x, plane_coeff.x) && similar(orig_plane_coeff.y, plane_coeff.y) && similar(orig_plane_coeff.z, plane_coeff.z)
 									&& similar(orig_plane_coeff.w, plane_coeff.w)){
 										ROS_INFO("didn't move  door");
-										as_.setPreempted();
+										//as_.setPreempted();
 										result_.success = false;
 										as_.setSucceeded(result_);
+										return;
 								} else {
 										ROS_INFO("moved door");
-										as_.setPreempted();
+										//as_.setPreempted();
 										result_.success = true;
 										as_.setSucceeded(result_);
+										return;
 								}	
 								
 						}	
