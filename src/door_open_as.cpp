@@ -335,6 +335,8 @@ protected:
 		//}	
 	} else {
 		ROS_INFO("didn't enter vision");
+		result_.success = false;
+		as_.setSucceeded(result_);
 	}
 	orig_plane_coeff = plane_coeff; 
 	//make an array of poses for first goal		
@@ -346,7 +348,7 @@ protected:
 	int changey1 = 0;
 	poses_msg_first.poses.push_back(first_goal.pose);
 	//potential_approach = first_goal.pose;
-	ROS_INFO("passed .5");
+	//ROS_INFO("passed .5");
 	for(int changex = 0; changex < 20; changex++){
 		int occurances = 0;
 		for(int changey = 0; changey < 20; changey++){
@@ -362,7 +364,7 @@ protected:
 		}	
 		//changex1 += .05;
 	}
-			ROS_INFO("passed 1");
+		//	ROS_INFO("passed 1");
 	//make array of poses for the second goal
 	geometry_msgs::PoseArray poses_msg_2nd;
 	poses_msg_first.header.seq = 1;

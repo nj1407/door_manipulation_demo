@@ -163,8 +163,8 @@ add_executable(door_handle_detection src/door_handle_detection.cpp)
 add_executable(door_open src/door_open.cpp)
 add_executable(door_open_as src/door_open_as.cpp)
 add_executable(door_open_client src/door_open_client.cpp)
-add_executable(door_open_as_fast src/door_open_as.cpp)
-add_executable(door_open_client_fast src/door_open_client.cpp)
+add_executable(door_open_as_fast src/door_open_as_fast.cpp)
+add_executable(door_open_client_fast src/door_open_client_fast.cpp)
 
 
 ## Add cmake target dependencies of the executable
