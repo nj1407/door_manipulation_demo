@@ -244,6 +244,7 @@ protected:
   {
   }
   
+  //check if values are similar to each other within 10 cm
   bool similar(float x1, float x2){
 	if(x1 - .05 < x2 && x2 < x1 +.05){
 		return true;
@@ -335,54 +336,55 @@ protected:
 		//}	
 	} else {
 		ROS_INFO("didn't enter vision");
+		result_.success = false;
+		as_.setSucceeded(result_);
 	}
 	orig_plane_coeff = plane_coeff; 
 	//make an array of poses for first goal		
-	
-			
-							double timeoutSeconds = 3.85;
-							int rateHertz = 100;
-							geometry_msgs::TwistStamped velocityMsg;
+	//segbot_arm_manipulation::homeArm(nh_);
+	//segbot_arm_manipulation::homeArm(nh_);		
+	double timeoutSeconds = 3.85;
+	int rateHertz = 100;
+	geometry_msgs::TwistStamped velocityMsg;
 							
-							ros::Rate r(rateHertz);
-							for(int i = 0; i < (int)timeoutSeconds * rateHertz; i++) {
+	ros::Rate r(rateHertz);
+	for(int i = 0; i < (int)timeoutSeconds * rateHertz; i++) {
 								
-								velocityMsg.twist.linear.x = 1.25;
-	velocityMsg.twist.linear.y = 0.0;
-	velocityMsg.twist.linear.z = 0.0;
+		velocityMsg.twist.linear.x = 1.25;
+		velocityMsg.twist.linear.y = 0.0;
+		velocityMsg.twist.linear.z = 0.0;
 								
-	velocityMsg.twist.angular.x = 0.0;
-	velocityMsg.twist.angular.y = 0.0;
-	velocityMsg.twist.angular.z = 0.0;
+		velocityMsg.twist.angular.x = 0.0;
+		velocityMsg.twist.angular.y = 0.0;
+		velocityMsg.twist.angular.z = 0.0;
 								
 								
-	pub_velocity.publish(velocityMsg);
+		pub_velocity.publish(velocityMsg);
 								
-	r.sleep();
-							
+		r.sleep();
+	}					
 		
-							segbot_arm_manipulation::homeArm(nh_);
-							if(client.call(door_srv)){
-								ros::spinOnce();
+		segbot_arm_manipulation::homeArm(nh_);
+		if(client.call(door_srv)){
+			ros::spinOnce();
 
-						    } else {
-									ROS_INFO("didn't enter vision");
-								}
-								if(similar(orig_plane_coeff.x, plane_coeff.x) && similar(orig_plane_coeff.y, plane_coeff.y) && similar(orig_plane_coeff.z, plane_coeff.z)
-									&& similar(orig_plane_coeff.w, plane_coeff.w)){
-										ROS_INFO("didn't move  door");
-										as_.setPreempted();
-										result_.success = false;
-										as_.setSucceeded(result_);
-								} else {
-										ROS_INFO("moved door");
-										as_.setPreempted();
-										result_.success = true;
-										as_.setSucceeded(result_);
-								}	
-					
-				}	
+		} else {
+			ROS_INFO("didn't enter vision");
 		}
+		//compare plane coefficents to see if door has moved
+		if(similar(orig_plane_coeff.x, plane_coeff.x) && similar(orig_plane_coeff.y, plane_coeff.y) && similar(orig_plane_coeff.z, plane_coeff.z)
+		&& similar(orig_plane_coeff.w, plane_coeff.w)){
+			ROS_INFO("didn't move  door");
+			result_.success = false;
+			as_.setSucceeded(result_);
+		} else {
+			ROS_INFO("moved door");
+			result_.success = true;
+			as_.setSucceeded(result_);
+		}	
+					
+	}		
+		
 };
 int main (int argc, char** argv)
 {
