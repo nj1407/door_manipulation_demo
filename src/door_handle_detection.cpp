@@ -203,7 +203,7 @@ void computeClusters(PointCloudT::Ptr in, double tolerance){
 	pcl::EuclideanClusterExtraction<PointT> ec;
 	ec.setClusterTolerance (tolerance); // 2cm
 	//filter by door handle size assumed facing door head on and only have points of this size
-	ec.setMinClusterSize (300);
+	ec.setMinClusterSize (000);
 	ec.setMaxClusterSize (800);
 	ec.setSearchMethod (tree);
 	ec.setInputCloud (in);

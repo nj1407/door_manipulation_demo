@@ -520,7 +520,7 @@ protected:
 							}
 							ROS_INFO("moving forward");
 							pressEnter();
-							double timeoutSeconds = 1.85;
+							double timeoutSeconds = 3.85;
 							int rateHertz = 100;
 							geometry_msgs::TwistStamped velocityMsg;
 							
@@ -554,6 +554,7 @@ protected:
 							ROS_INFO("Demo ending...arm will move back 'ready' position .");
 							//segbot_arm_manipulation::moveToJointState(n,joint_state_outofview);
 							//segbot_arm_manipulation::moveToPoseMoveIt(n,start_pose);
+							segbot_arm_manipulation::homeArm(nh_);
 							segbot_arm_manipulation::homeArm(nh_);
 							if(client.call(door_srv)){
 								ros::spinOnce();
