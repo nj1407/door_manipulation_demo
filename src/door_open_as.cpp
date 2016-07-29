@@ -514,6 +514,7 @@ protected:
 									changex1 ++;
 								}	
 							}
+							
 							ROS_INFO("2nd goal picked...check if pose is what you want in rviz if not ctr c.");
 							pressEnter();
 							segbot_arm_manipulation::moveToPoseMoveIt(nh_,second_goal);
@@ -523,8 +524,8 @@ protected:
 							segbot_arm_manipulation::moveToPoseMoveIt(nh_,second_goal);
 							ros::spinOnce();  
 							pressEnter();
-							/*
-							double timeoutSeconds = 3.85;
+							
+							/*double timeoutSeconds = 3.85;
 							int rateHertz = 100;
 							geometry_msgs::TwistStamped velocityMsg;
 							
@@ -532,8 +533,8 @@ protected:
 							for(int i = 0; i < (int)timeoutSeconds * rateHertz; i++) {
 								
 								velocityMsg.twist.linear.x = 1.25;
-								velocityMsg.twist.linear.y = 0.0;
-								velocityMsg.twist.linear.z = 0.0;
+								velocityMsg.twist.linear.y = 0.1;
+								velocityMsg.twist.linear.z = 0.1;
 								
 								velocityMsg.twist.angular.x = 0.0;
 								velocityMsg.twist.angular.y = 0.0;
