@@ -25,27 +25,27 @@ void sig_handler(int sig) {
 };
 
 int main(int argc, char **argv) {
-	ros::init(argc, argv, "door_open_client");
-	//create the action client
-	actionlib::SimpleActionClient<door_manipulation_demo::PushDoorAction> ac("door_open_as", true);
-	ac.waitForServer();
+    ros::init(argc, argv, "door_open_client");
+    //create the action client
+    actionlib::SimpleActionClient<door_manipulation_demo::PushDoorAction> ac("door_open_as", true);
+    ac.waitForServer();
     ROS_INFO("Waiting for action server to start.");
 
-	
-	//register ctrl-c
-	signal(SIGINT, sig_handler);
+    
+    //register ctrl-c
+    signal(SIGINT, sig_handler);
 
     ROS_INFO("Action server started, sending goal.");
     // send a goal to the action
     door_manipulation_demo::PushDoorGoal goal;
     goal.pushDoor = true;
     ac.sendGoal(goal);
-	ROS_INFO("waiting for push door results...");
-	ac.waitForResult();
+    ROS_INFO("waiting for push door results...");
+    ac.waitForResult();
     //wait for the action to return
 
 
-	ROS_INFO(" push door action	 finished.");
+    ROS_INFO(" push door action  finished.");
 
 }
 
